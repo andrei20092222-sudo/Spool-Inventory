@@ -143,7 +143,7 @@ The built-in catalog is the whole [Open Filament Database](https://github.com/Op
 (MIT): about 150 brands, 14,700 colors and 38 materials, 1.75 mm only. Pick a brand, material, product line and
 color and the swatch, spool size and (where known) empty-spool weight are filled in. Seven brands (Prusament,
 AzureFilm, Polymaker, Rosa3D, Raise3D, Elegoo, Buddy3D) have tidied product lines for PLA, PETG and TPU and come
-first in the list; all others follow alphabetically. Something missing? Use *Custom*, and tick "Save to my catalog".
+first in the list (my primary used brands of filament, therefore from this started the project); all others follow alphabetically. Something missing? Use *Custom*, and tick "Save to my catalog".
 `tools/build_catalog.py` rebuilds `www/catalog.json` from a database checkout:
 `python3 -I tools/build_catalog.py /path/to/open-filament-database`. Missing or wrong colors are best fixed
 upstream in the database, so everyone benefits.
