@@ -1,0 +1,266 @@
+add_spool:
+  fields:
+    vendor:
+      required: true
+      example: Prusament
+      selector:
+        text:
+    material:
+      required: true
+      example: PETG
+      selector:
+        select:
+          custom_value: true
+          options:
+            - PLA
+            - PETG
+            - ABS
+            - ASA
+            - TPU
+            - PC
+            - PA
+            - PVA
+            - HIPS
+            - PP
+    product:
+      example: Matte PETG
+      selector:
+        text:
+    color_name:
+      example: Galaxy Black
+      selector:
+        text:
+    color:
+      selector:
+        color_rgb:
+    diameter:
+      default: "1.75"
+      selector:
+        select:
+          options:
+            - "1.75"
+            - "2.85"
+    initial_weight:
+      example: 1000
+      selector:
+        number:
+          min: 1
+          max: 10000
+          step: 1
+          unit_of_measurement: g
+          mode: box
+    spool_weight:
+      example: 210
+      selector:
+        number:
+          min: 0
+          max: 2000
+          step: 1
+          unit_of_measurement: g
+          mode: box
+    gross_weight:
+      example: 1130
+      selector:
+        number:
+          min: 0
+          max: 12000
+          step: 1
+          unit_of_measurement: g
+          mode: box
+    remaining_weight:
+      example: 920
+      selector:
+        number:
+          min: 0
+          max: 10000
+          step: 1
+          unit_of_measurement: g
+          mode: box
+    price:
+      selector:
+        number:
+          min: 0
+          max: 1000
+          step: 0.01
+          mode: box
+    location:
+      example: Shelf A
+      selector:
+        text:
+    notes:
+      selector:
+        text:
+          multiline: true
+    tag_id:
+      selector:
+        text:
+    loaded:
+      selector:
+        boolean:
+    reorder:
+      selector:
+        boolean:
+    refill:
+      selector:
+        boolean:
+
+update_spool:
+  target:
+    entity:
+      integration: spool_inventory
+      domain: sensor
+  fields:
+    vendor:
+      selector:
+        text:
+    material:
+      selector:
+        select:
+          custom_value: true
+          options:
+            - PLA
+            - PETG
+            - ABS
+            - ASA
+            - TPU
+            - PC
+            - PA
+            - PVA
+            - HIPS
+            - PP
+    product:
+      example: Matte PETG
+      selector:
+        text:
+    color_name:
+      selector:
+        text:
+    color:
+      selector:
+        color_rgb:
+    diameter:
+      selector:
+        select:
+          options:
+            - "1.75"
+            - "2.85"
+    initial_weight:
+      selector:
+        number:
+          min: 1
+          max: 10000
+          step: 1
+          unit_of_measurement: g
+          mode: box
+    spool_weight:
+      selector:
+        number:
+          min: 0
+          max: 2000
+          step: 1
+          unit_of_measurement: g
+          mode: box
+    remaining_weight:
+      selector:
+        number:
+          min: 0
+          max: 10000
+          step: 1
+          unit_of_measurement: g
+          mode: box
+    price:
+      selector:
+        number:
+          min: 0
+          max: 1000
+          step: 0.01
+          mode: box
+    location:
+      selector:
+        text:
+    notes:
+      selector:
+        text:
+          multiline: true
+    tag_id:
+      selector:
+        text:
+    loaded:
+      selector:
+        boolean:
+    reorder:
+      selector:
+        boolean:
+    refill:
+      selector:
+        boolean:
+
+weigh_spool:
+  target:
+    entity:
+      integration: spool_inventory
+      domain: sensor
+  fields:
+    gross_weight:
+      required: true
+      example: 1130
+      selector:
+        number:
+          min: 0
+          max: 12000
+          step: 1
+          unit_of_measurement: g
+          mode: box
+    spool_weight:
+      example: 210
+      selector:
+        number:
+          min: 0
+          max: 2000
+          step: 1
+          unit_of_measurement: g
+          mode: box
+
+consume_filament:
+  target:
+    entity:
+      integration: spool_inventory
+      domain: sensor
+  fields:
+    grams:
+      required: true
+      example: 37.5
+      selector:
+        number:
+          min: 0
+          max: 10000
+          step: 0.1
+          unit_of_measurement: g
+          mode: box
+
+delete_spool:
+  target:
+    entity:
+      integration: spool_inventory
+      domain: sensor
+
+list_spools:
+  fields:
+    material:
+      example: PETG
+      selector:
+        text:
+    vendor:
+      example: Prusament
+      selector:
+        text:
+    location:
+      example: Drier
+      selector:
+        text:
+    loaded:
+      selector:
+        boolean:
+    reorder:
+      selector:
+        boolean:

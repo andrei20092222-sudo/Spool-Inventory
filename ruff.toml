@@ -1,0 +1,9 @@
+line-length = 120
+target-version = "py313"
+
+[lint]
+select = ["E", "F", "W", "B", "UP", "SIM"]
+ignore = ["E501"]
+
+[lint.per-file-ignores]
+"tools/*" = ["B023", "F841", "E741"]

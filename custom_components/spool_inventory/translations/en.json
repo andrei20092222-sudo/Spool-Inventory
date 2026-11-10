@@ -1,0 +1,276 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Spool Inventory",
+        "description": "Set up a local filament spool inventory. Spools are stored in Home Assistant and nothing is sent to the cloud."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Spool Inventory is already set up."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "total_filament": {
+        "name": "Total filament"
+      },
+      "spool_count": {
+        "name": "Spool count"
+      },
+      "maintenance_overdue": {
+        "name": "Maintenance overdue"
+      },
+      "items_low": {
+        "name": "Parts and consumables low"
+      }
+    }
+  },
+  "exceptions": {
+    "not_loaded": {
+      "message": "Spool Inventory is not set up. Add it under Settings > Devices & services."
+    },
+    "not_a_spool": {
+      "message": "This action only works on spool sensors, not on the summary sensors."
+    },
+    "spool_not_found": {
+      "message": "Spool {spool_id} was not found."
+    },
+    "weight_conflict": {
+      "message": "Provide either remaining_weight or gross_weight, not both."
+    },
+    "gross_below_tare": {
+      "message": "The weighed value ({gross} g) is lower than the empty spool weight ({tare} g). Check the empty spool weight."
+    },
+    "catalog_full": {
+      "message": "Your own catalog is full (500 entries). Remove some entries first."
+    },
+    "import_invalid": {
+      "message": "That file is not a Spool Inventory backup."
+    },
+    "not_in_trash": {
+      "message": "That spool is no longer in the recently deleted list."
+    },
+    "printer_not_found": {
+      "message": "That printer does not exist."
+    },
+    "task_not_found": {
+      "message": "That maintenance task does not exist."
+    },
+    "item_not_found": {
+      "message": "That part or consumable does not exist."
+    },
+    "name_required": {
+      "message": "A name is required."
+    },
+    "task_invalid": {
+      "message": "The maintenance task needs a name, an interval of 1 to 3650 days and a date that is not in the future."
+    },
+    "item_invalid": {
+      "message": "The part or consumable needs a name and valid numbers."
+    },
+    "equipment_full": {
+      "message": "The limit of printers, tasks or items is reached."
+    }
+  },
+  "services": {
+    "add_spool": {
+      "name": "Add spool",
+      "description": "Adds a spool to the inventory. Give either the remaining filament or the gross weight from your scale.",
+      "fields": {
+        "vendor": {
+          "name": "Vendor",
+          "description": "Brand or manufacturer, for example Prusament."
+        },
+        "material": {
+          "name": "Material",
+          "description": "Filament type, for example PETG."
+        },
+        "product": {
+          "name": "Product line",
+          "description": "Optional product line, for example Matte PETG. Leave empty if it is the plain material."
+        },
+        "color_name": {
+          "name": "Color name",
+          "description": "For example Galaxy Black."
+        },
+        "color": {
+          "name": "Color",
+          "description": "Swatch color for display."
+        },
+        "diameter": {
+          "name": "Diameter",
+          "description": "Filament diameter in mm."
+        },
+        "initial_weight": {
+          "name": "Net weight when new",
+          "description": "Filament weight on a new spool in grams, without the empty spool."
+        },
+        "spool_weight": {
+          "name": "Empty spool weight",
+          "description": "Weight of the empty spool in grams. Needed to turn a scale reading into remaining filament."
+        },
+        "gross_weight": {
+          "name": "Weighed gross weight",
+          "description": "Spool plus filament on the scale in grams. Remaining filament is this minus the empty spool weight."
+        },
+        "remaining_weight": {
+          "name": "Remaining filament",
+          "description": "Filament left in grams. Defaults to the full net weight."
+        },
+        "price": {
+          "name": "Price",
+          "description": "What you paid for the spool."
+        },
+        "location": {
+          "name": "Location",
+          "description": "Where the spool is stored."
+        },
+        "notes": {
+          "name": "Notes",
+          "description": "Free text."
+        },
+        "tag_id": {
+          "name": "NFC tag ID",
+          "description": "Optional identifier of an NFC tag, reserved for future use."
+        },
+        "loaded": {
+          "name": "Loaded in printer",
+          "description": "Whether this spool is currently loaded in the printer."
+        },
+        "reorder": {
+          "name": "Needs reordering",
+          "description": "Put the spool on the reorder list."
+        },
+        "refill": {
+          "name": "Refill",
+          "description": "Whether this is a spool-less refill (for example a Prusament 900 g refill) used on a reusable spool."
+        }
+      }
+    },
+    "update_spool": {
+      "name": "Update spool",
+      "description": "Changes details or weights of a spool.",
+      "fields": {
+        "vendor": {
+          "name": "Vendor",
+          "description": "Brand or manufacturer."
+        },
+        "material": {
+          "name": "Material",
+          "description": "Filament type."
+        },
+        "product": {
+          "name": "Product line",
+          "description": "Optional product line, for example Matte PETG. Leave empty if it is the plain material."
+        },
+        "color_name": {
+          "name": "Color name",
+          "description": "Name of the color."
+        },
+        "color": {
+          "name": "Color",
+          "description": "Swatch color for display."
+        },
+        "diameter": {
+          "name": "Diameter",
+          "description": "Filament diameter in mm."
+        },
+        "initial_weight": {
+          "name": "Net weight when new",
+          "description": "Filament weight on a new spool in grams."
+        },
+        "spool_weight": {
+          "name": "Empty spool weight",
+          "description": "Weight of the empty spool in grams."
+        },
+        "remaining_weight": {
+          "name": "Remaining filament",
+          "description": "Filament left in grams."
+        },
+        "price": {
+          "name": "Price",
+          "description": "What you paid for the spool."
+        },
+        "location": {
+          "name": "Location",
+          "description": "Where the spool is stored."
+        },
+        "notes": {
+          "name": "Notes",
+          "description": "Free text."
+        },
+        "tag_id": {
+          "name": "NFC tag ID",
+          "description": "Identifier of an NFC tag."
+        },
+        "loaded": {
+          "name": "Loaded in printer",
+          "description": "Whether this spool is currently loaded in the printer."
+        },
+        "reorder": {
+          "name": "Needs reordering",
+          "description": "Put the spool on the reorder list."
+        },
+        "refill": {
+          "name": "Refill",
+          "description": "Whether this is a spool-less refill (for example a Prusament 900 g refill) used on a reusable spool."
+        }
+      }
+    },
+    "weigh_spool": {
+      "name": "Weigh spool",
+      "description": "Sets the remaining filament from a scale reading. Remaining filament equals the gross weight minus the empty spool weight.",
+      "fields": {
+        "gross_weight": {
+          "name": "Gross weight",
+          "description": "Spool plus filament on the scale in grams."
+        },
+        "spool_weight": {
+          "name": "Empty spool weight",
+          "description": "Optional. Saves a new empty spool weight for this spool."
+        }
+      }
+    },
+    "consume_filament": {
+      "name": "Consume filament",
+      "description": "Subtracts used filament from a spool.",
+      "fields": {
+        "grams": {
+          "name": "Grams used",
+          "description": "Filament used in grams."
+        }
+      }
+    },
+    "delete_spool": {
+      "name": "Delete spool",
+      "description": "Removes a spool from the inventory."
+    },
+    "list_spools": {
+      "name": "List spools",
+      "description": "Returns all spools with their details, optionally filtered by material or vendor.",
+      "fields": {
+        "material": {
+          "name": "Material",
+          "description": "Only return spools of this material."
+        },
+        "vendor": {
+          "name": "Vendor",
+          "description": "Only return spools from this vendor."
+        },
+        "location": {
+          "name": "Location",
+          "description": "Only spools stored in this location."
+        },
+        "loaded": {
+          "name": "Loaded in printer",
+          "description": "Only spools that are (or are not) loaded in the printer."
+        },
+        "reorder": {
+          "name": "Needs reordering",
+          "description": "Only spools that are (or are not) on the reorder list."
+        }
+      }
+    }
+  }
+}

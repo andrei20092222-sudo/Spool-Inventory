@@ -1,0 +1,20 @@
+# Paste into a dashboard: Edit dashboard > Add card > Manual (or raw configuration editor).
+type: markdown
+title: Filament inventory
+content: >-
+  {% set spools = expand(integration_entities('spool_inventory'))
+     | selectattr('attributes.spool_id', 'defined')
+     | sort(attribute='attributes.remaining_percent') | list %}
+  **{{ states('sensor.spool_inventory_total_filament') | float(0) | round(0) | int }} g**
+  left on {{ spools | count }} spools (lowest first)
+
+
+  | Spool | Left | % |
+
+  |---|---:|---:|
+
+  {% for s in spools -%}
+
+  | {{ s.attributes.name }}{% if s.attributes.location %} ({{ s.attributes.location }}){% endif %} | {{ s.state | float(0) | round(0) | int }} g | {{ s.attributes.remaining_percent | round(0) | int }}% |
+
+  {% endfor %}
