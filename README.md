@@ -170,10 +170,10 @@ I want to be upfront about how this project came about, full transparency.
 
 I wanted a filament inventory that lives inside Home Assistant, without running a separate server. I run Home Assistant
 on a Raspberry Pi and print on a Prusa Core One+, so I started describing what I needed to Claude, an AI assistant
-made by Anthropic, and we built it together over a long conversation.
+made by Anthropic, and we built it together over a couple of weeks.
 
 - **Claude wrote the code.** The Python backend, the JavaScript panel, the tests, the documentation, the catalog
-  build script and the screenshots all came from Claude. I did not write the code by hand.
+  build script and the screenshots all came from Claude. I did not write the code by hand. I used Claude as a tool, to build this faster and with less effort than I could have on my own.
 - **I steered and tested.** I came up with the idea, decided what goes in (weigh sessions, the reorder list, the printer
   maintenance tab, and so on) and what stays out, and I run it on my own Home Assistant. When something looked
   wrong or was clumsy to use, I said so and we changed it. I'm the one who publishes the releases and answers issues.
