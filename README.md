@@ -8,9 +8,9 @@ becomes a device with a sensor (grams left) for automations and dashboards.
 
 ![Overview](docs/images/overview.png)
 
-> **Made with AI.** This integration was written by [Claude](https://claude.ai), an AI assistant made by Anthropic,
-> working with the author, who sets the goals, decides on features, tests everything on his own Home Assistant and
-> publishes it. See [How this was made](#how-this-was-made) for the details.
+> **Made with AI.** I built this together with [Claude](https://claude.ai), an AI assistant made by Anthropic.
+> Claude wrote the code; I decided what it should do and tested it on my own setup.
+> Details in [How this was made](#how-this-was-made).
 
 ## Features
 
@@ -166,28 +166,31 @@ pytest
 
 ## How this was made
 
-For full transparency, here is how this project came about.
+I want to be upfront about how this project came about, full transparency.
 
-- **Written by Claude.** All code (Python backend, JavaScript panel), the tests, the documentation, the catalog build
-  script and the screenshots were produced by Claude in a long conversation with the author. The author did not write
-  the code by hand.
-- **Directed and tested by the author.** The author came up with the idea, decided what the integration should do
-  (inventory, weigh sessions, reorder list, printer maintenance, and so on), reviewed the results and runs it on his
-  own Raspberry Pi with a Prusa Core One+. He is responsible for the releases and for answering issues.
-- **How it was checked.** Claude ran automatic tests (43 tests with the Home Assistant test framework, plus
-  browser tests of the panel) and the `ruff` code checker. The same tests and Home Assistant's `hassfest` and the HACS
-  validation run on GitHub for every change. Passing tests do not prove the absence of bugs.
-- **No independent code review yet.** To the author's knowledge, nobody else has reviewed the code line by line. It
-  has had limited real-world use, mainly on one Home Assistant installation. If you find a problem, or would like to
-  review the code, please open an issue or a pull request.
-- **Data.** The filament catalog comes from the [Open Filament Database](https://github.com/OpenFilamentCollective/open-filament-database)
-  (MIT) and was tidied by script, so it can contain mistakes inherited from the database or introduced while tidying.
-  A few entries were added by hand with approximate color codes. Wrong or missing entries are best fixed in the
-  database itself.
-- **Your data stays with you.** The integration makes no network calls and sends nothing anywhere. Your inventory is stored in
-  your Home Assistant's `.storage` folder, and you can read the code to confirm this.
-- **Use at your own risk.** The software is provided as is under the MIT license, without warranty. Back up Home
-  Assistant before installing a pre-release.
+I wanted a filament inventory that lives inside Home Assistant, without running a separate server. I run Home Assistant
+on a Raspberry Pi and print on a Prusa Core One+, so I started describing what I needed to Claude, an AI assistant
+made by Anthropic, and we built it together over a long conversation.
+
+- **Claude wrote the code.** The Python backend, the JavaScript panel, the tests, the documentation, the catalog
+  build script and the screenshots all came from Claude. I did not write the code by hand.
+- **I steered and tested.** I came up with the idea, decided what goes in (weigh sessions, the reorder list, the printer
+  maintenance tab, and so on) and what stays out, and I run it on my own Home Assistant. When something looked
+  wrong or was clumsy to use, I said so and we changed it. I'm the one who publishes the releases and answers issues.
+- **How it was checked.** Claude ran automatic tests (43 tests with the Home Assistant test framework, plus browser
+  tests of the panel) and the `ruff` code checker. The same tests, Home Assistant's `hassfest` and the HACS check also run
+  on GitHub for every change. Passing tests don't prove there are no bugs.
+- **No independent review yet.** As far as I know, nobody else has read the code line by line, and it has had limited
+  real-world use, mostly on my own installation. If you find a problem, or you'd like to review the code, please
+  open an issue or a pull request. I'd really appreciate it.
+- **About the catalog.** The filament catalog comes from the
+  [Open Filament Database](https://github.com/OpenFilamentCollective/open-filament-database) (MIT) and was tidied
+  by script, so it can contain mistakes from the database or from the tidying. A few entries were added by hand
+  with approximate color codes. Wrong or missing entries are best fixed in the database itself.
+- **Your data stays with you.** The integration makes no network calls and sends nothing anywhere. Your inventory is
+  stored in your Home Assistant's `.storage` folder, and you can read the code to confirm that.
+- **Use at your own risk.** It's provided as is under the MIT license, without warranty. Please back up Home Assistant
+  before installing a pre-release.
 
 ## Disclaimer
 
