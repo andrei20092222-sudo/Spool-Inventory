@@ -8,6 +8,10 @@ becomes a device with a sensor (grams left) for automations and dashboards.
 
 ![Overview](docs/images/overview.png)
 
+> **Made with AI.** This integration was written by [Claude](https://claude.ai), an AI assistant made by Anthropic,
+> working with the author, who sets the goals, decides on features, tests everything on his own Home Assistant and
+> publishes it. See [How this was made](#how-this-was-made) for the details.
+
 ## Features
 
 - **Inventory**: every spool with vendor, material, color, remaining grams, price, location, notes.
@@ -159,6 +163,31 @@ pip install -r requirements-test.txt
 ruff check .
 pytest
 ```
+
+## How this was made
+
+For full transparency, here is how this project came about.
+
+- **Written by Claude.** All code (Python backend, JavaScript panel), the tests, the documentation, the catalog build
+  script and the screenshots were produced by Claude in a long conversation with the author. The author did not write
+  the code by hand.
+- **Directed and tested by the author.** The author came up with the idea, decided what the integration should do
+  (inventory, weigh sessions, reorder list, printer maintenance, and so on), reviewed the results and runs it on his
+  own Raspberry Pi with a Prusa Core One+. He is responsible for the releases and for answering issues.
+- **How it was checked.** Claude ran automatic tests (43 tests with the Home Assistant test framework, plus
+  browser tests of the panel) and the `ruff` code checker. The same tests and Home Assistant's `hassfest` and the HACS
+  validation run on GitHub for every change. Passing tests do not prove the absence of bugs.
+- **No independent code review yet.** To the author's knowledge, nobody else has reviewed the code line by line. It
+  has had limited real-world use, mainly on one Home Assistant installation. If you find a problem, or would like to
+  review the code, please open an issue or a pull request.
+- **Data.** The filament catalog comes from the [Open Filament Database](https://github.com/OpenFilamentCollective/open-filament-database)
+  (MIT) and was tidied by script, so it can contain mistakes inherited from the database or introduced while tidying.
+  A few entries were added by hand with approximate color codes. Wrong or missing entries are best fixed in the
+  database itself.
+- **Your data stays with you.** The integration makes no network calls and sends nothing anywhere. Your inventory is stored in
+  your Home Assistant's `.storage` folder, and you can read the code to confirm this.
+- **Use at your own risk.** The software is provided as is under the MIT license, without warranty. Back up Home
+  Assistant before installing a pre-release.
 
 ## Disclaimer
 
