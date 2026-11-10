@@ -1,0 +1,57 @@
+name: Release
+
+# Push a tag such as v0.9.2 to publish a release. Tags with a dash (v1.0.0-rc1) or a 0.x version are
+# published as pre-releases. The zip carries a SHA-256 checksum and a signed build attestation.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check that the tag matches manifest.json
+        run: |
+          version=$(python3 -c "import json;print(json.load(open('custom_components/spool_inventory/manifest.json'))['version'])")
+          if [ "v$version" != "${GITHUB_REF_NAME%%-*}" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match manifest version $version"; exit 1
+          fi
+
+      - name: Build the zip
+        run: |
+          cd custom_components/spool_inventory
+          zip -qr ../../spool_inventory.zip . -x '*/__pycache__/*' '*.pyc' 'www/logos/*'
+          cd ../..
+          sha256sum spool_inventory.zip | tee spool_inventory.zip.sha256
+
+      - name: Release notes from CHANGELOG.md
+        run: |
+          version=$(python3 -c "import json;print(json.load(open('custom_components/spool_inventory/manifest.json'))['version'])")
+          awk -v v="$version" '$0 ~ "^## "v" " {on=1; next} /^## / {on=0} on' CHANGELOG.md > notes.md
+          printf '\nSHA-256 of spool_inventory.zip:\n\n    %s\n' "$(cut -d' ' -f1 spool_inventory.zip.sha256)" >> notes.md
+
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: spool_inventory.zip
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          flag=""
+          case "$GITHUB_REF_NAME" in *-*|v0.*) flag="--prerelease" ;; esac
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            # the release was already created in the web page: attach the files and fill in the notes
+            gh release upload "$GITHUB_REF_NAME" spool_inventory.zip spool_inventory.zip.sha256 --clobber
+            gh release edit "$GITHUB_REF_NAME" --notes-file notes.md $flag
+          else
+            gh release create "$GITHUB_REF_NAME" spool_inventory.zip spool_inventory.zip.sha256 \
+              --title "$GITHUB_REF_NAME" --notes-file notes.md $flag
+          fi
