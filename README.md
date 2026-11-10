@@ -70,8 +70,7 @@ the **Filament** sidebar entry appears. Updating keeps your data.
   and a "..." menu with edit, history, duplicate, archive, delete.
 - **Weigh session** (toolbar): walks through never-weighed spools, all spools, or one location.
 - **Used in printer** (toolbar): subtracts grams from the spool marked as loaded.
-- **Settings**: low threshold (default 150 g), notifications, currency (default RON), storage locations (locations can be added or deleted)
-  your own catalog, recently deleted spools, backup and restore.
+- **Settings**: low threshold (default 150 g), notifications, currency (default RON), storage locations (locations can be added or deleted), your own catalog, recently deleted spools, backup and restore.
 
 Vendor logos are not shipped (they are trademarks). Without them each vendor gets a letter badge. To show
 pictures, put your own images in `custom_components/spool_inventory/www/logos/` named `prusament.png`,
