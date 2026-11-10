@@ -75,7 +75,7 @@ the **Filament** sidebar entry appears. Updating keeps your data.
 
 Vendor logos are not shipped (they are trademarks). Without them each vendor gets a letter badge. To show
 pictures, put your own images in `custom_components/spool_inventory/www/logos/` named `prusament.png`,
-`azurefilm.png`, `polymaker.svg`, `rosa3d_filaments.png`, `raise3d.png`, `elegoo.png`, `buddy3d.png` for example (these are the filament brand that I use, so it's made around these), then reload.
+`azurefilm.png`, `polymaker.svg`, `rosa3d_filaments.png`, `raise3d.png`, `elegoo.png`, `buddy3d.png` for example (these are the filament brands that I use, so it's made around these), then reload.
 
 ## Actions
 
