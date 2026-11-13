@@ -1,0 +1,67 @@
+name: Bug report
+description: Something does not work as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping. The more detail, the faster it can be fixed. This is a hobby project, so replies may take a few days.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: And what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: "1. Open the Filament panel\n2. ...\n3. ..."
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where does it happen
+      options:
+        - Spool list / add / edit
+        - By color / By location
+        - What fits?
+        - Weighing / history
+        - Printer and maintenance
+        - Automatic subtraction (PrusaLink)
+        - Backup / restore
+        - Installing / updating
+        - Something else
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Spool Inventory version
+      placeholder: "e.g. 0.11.0"
+    validations:
+      required: true
+  - type: input
+    id: ha
+    attributes:
+      label: Home Assistant version
+      placeholder: "e.g. 2026.11.1"
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Browser and device
+      placeholder: "e.g. Chrome on Windows, HA app on Android"
+  - type: textarea
+    id: prusa
+    attributes:
+      label: Only for automatic subtraction
+      description: Printer model and firmware, the file type (.gcode or .bgcode), what the printer showed (finished / cancelled), and the "auto:" line from the spool's history.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Diagnostics and log
+      description: |
+        Settings > Devices & services > Spool Inventory > Download diagnostics, and any related lines from Settings > System > Logs.
+        Diagnostics contain no personal data other than your spool names, locations and notes. Remove anything you do not want to share.
