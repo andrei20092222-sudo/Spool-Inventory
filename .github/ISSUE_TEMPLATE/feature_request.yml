@@ -1,0 +1,15 @@
+name: Idea or feature request
+description: Something you would like Spool Inventory to do
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like
+      description: Describe what you are trying to do, not only the feature. That makes it easier to find a simple solution.
+    validations:
+      required: true
+  - type: textarea
+    id: now
+    attributes:
+      label: How do you do it today
