@@ -18,11 +18,13 @@ becomes a device with a sensor (grams left) for automations and dashboards.
   Table or card view, search and filters, edit remaining grams in place.
 - **Catalog**: pick vendor, material and color from a built-in catalog (the whole
   Open Filament Database: about 150 brands, 14,700 colors), or add your own custom entries. Prusament refills (900 g) are supported.
+- **What fits?**: type the grams a print needs and see which spools have enough, by material and color.
+- **Automatic subtraction (beta, off by default)**: with a PrusaLink printer in Home Assistant, the grams of a print are subtracted from the loaded spool by themselves.
 - **Weigh session**: step through your spools, type the scale reading, press Enter. Warns about
   implausible readings.
 - **Loaded in printer**, **Used in printer** (subtract a print's grams from the loaded spool),
   **reorder list** with a "bought another" button, **archive** for finished spools.
-- **By color** and **By location** views, plus a **value of filament left** card with your currency.
+- **By color** (one row per color family, tap to see its spools whatever the material) and **By location** views, plus a **value of filament left** card with your currency.
 - **Low and empty alerts**: notifications and events for automations.
 - **Printer tab**: printers, maintenance tasks with intervals and overdue alerts, parts and consumables
   (nozzles, sheets, IPA, wipes...) with low-stock warnings and a shared shopping list.
@@ -72,6 +74,14 @@ the **Filament** sidebar entry appears. Updating keeps your data.
   left, or scale reading including the spool. **More fields** holds price, location and notes.
 - **Row buttons**: loaded in printer, reorder, bought another (reorder list only), weigh, use filament,
   and a "..." menu with edit, history, duplicate, archive, delete.
+- **What fits?** (toolbar): pick a material (and color), type the grams the print needs, and get the spools with enough
+  filament left. The lists only show what you own, and colors are grouped into families (all greens together, all greys together).
+- **Automatic subtraction (beta)**: needs the official PrusaLink integration already set up in Home Assistant. Switch it
+  on in Settings. When a print starts, the filament estimate is read from the print file; when it finishes, it is
+  subtracted from the spool marked as loaded. If a print is cancelled or fails, the share printed so far is subtracted.
+  It is the slicer's estimate, so it is shown as "auto" in the history, can be undone with "Set back to", and weighing
+  the spool always corrects it. Exactly one spool must be marked as loaded. Off by default.
+- **Unload clears the loaded spool (optional)**: when the printer reports no filament, no spool is marked as loaded any more, so you choose the spool each time you load one. Off by default.
 - **Weigh session** (toolbar): walks through never-weighed spools, all spools, or one location.
 - **Used in printer** (toolbar): subtracts grams from the spool marked as loaded.
 - **Settings**: low threshold (default 150 g), notifications, currency (default RON), storage locations (locations can be added or deleted), your own catalog, recently deleted spools, backup and restore.

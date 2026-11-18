@@ -4,6 +4,50 @@ All notable changes to Spool Inventory, newest first. The version number is the 
 Updating never needs anything beyond copying the folder over and restarting Home Assistant
 (plus Ctrl+F5 in the browser for panel changes).
 
+## 0.11.3
+
+- New optional setting **Clear "loaded in printer" when the printer reports no filament** (off by default, shown when the PrusaLink integration is set up). When the printer's Material sensor changes from a material to `---` (you unloaded the filament), no spool is marked as loaded any more, and the history shows "Unloaded from printer". Nothing is ever marked as loaded automatically: you pick the spool when you load filament.
+- It ignores "unavailable" (printer switched off, Home Assistant restarting) and anything while a print is running or paused, so a filament runout in the middle of a print does not clear the spool.
+
+## 0.11.2
+
+- Automatic subtraction no longer gives up at the very start of a print. Right after a print begins, the printer may not yet report the file or its filament numbers, so it now tries again after 10, 20, 40, 60 and 120 seconds while the print runs. A notification is only shown when all of those tries failed, and it says why. A last look at the file is also taken when the print ends.
+
+## 0.11.1
+
+- Notifications about automatic subtraction now end with the installed version, so it is clear which copy is running.
+
+## 0.11.0 - Automatic subtraction (beta)
+
+- New optional setting **Automatic subtraction (beta)**, off by default. It only appears when the official PrusaLink
+  integration is set up in Home Assistant, and it uses that printer, so nothing needs to be configured twice.
+- When a print starts, the filament estimate (grams) is read once from the print file (G-code or binary G-code). When
+  the printer reports the print as finished, it is subtracted from the spool marked as loaded. If the print is cancelled
+  or fails, the estimate scaled by the progress reached is subtracted.
+- The spool that was loaded when the print started is the one that is charged (if none was, the one loaded at the end).
+  Exactly one spool must be marked as loaded; otherwise you get a notification and nothing is changed.
+- Each print is subtracted only once, even across restarts of Home Assistant. A notification tells you when the file
+  could not be read.
+- If the printer already reports the filament numbers with the job, those are used and nothing is downloaded. Otherwise the file is read from the printer and several addresses are tried (the notification lists them if none works).
+- When no filament numbers can be found, the notification says what was found at each address (for example "not found", "file information without numbers") so the cause can be seen. "Total filament used" lines are accepted too.
+- The file is read by Spool Inventory itself (text .gcode and binary .bgcode), so it works with whatever PrusaLink library your Home Assistant ships. A .bgcode is only read as far as its header; a .gcode is streamed, never loaded whole into memory. Multi-material files are recognised and skipped, not guessed.
+- Entries appear in the history as "auto: file, X g, estimate" and can be undone with "Set back to".
+- This is an estimate from the slicer: weigh the spool now and then. Only single-material prints are supported.
+- The **By color** tab now has one row per color family (Black, Green, ...) instead of one row per material and color. Tap a row to see every spool of that color, whatever the material, with its remaining filament. The row shows the total and how much of each material.
+- New stored data: the print being followed and the last prints already subtracted. Older versions ignore it.
+
+## 0.10.0 - What fits?
+
+- New **What fits?** button in the toolbar. Choose a material, optionally a color, and type the grams a print needs
+  (your slicer shows it). It lists the spools with enough filament left: the one in the printer first, then the
+  ones with the least left over. A spool that would end with only a few grams to spare is marked "tight", because the
+  slicer's number is an estimate. Spools that are too small are listed below.
+- Colors are grouped into broad families (Black, White, Grey, Red, Green, Blue, ...): "Emerald Green" and "Pistachio Green" both count as Green, "Prusa Urban Grey" and "Azurefilm Grey" as Grey. The family comes from the color name, or from the color swatch when the name has no color word. Each spool still shows its own color name in the results.
+- The material and color lists only contain what you actually have (spools with filament left) and update by
+  themselves while the dialog is open, for example when you archive or add a spool. Empty and archived spools are never offered.
+- A **Load** button in the list marks the chosen spool as loaded in the printer (administrators only).
+- No changes to your stored data.
+
 ## 0.9.2 - Catalog cleanup
 
 - Product families are no longer listed as brands. The database marks them with a parent brand, and they are now
