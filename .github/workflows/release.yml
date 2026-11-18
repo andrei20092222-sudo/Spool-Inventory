@@ -34,7 +34,7 @@ jobs:
       - name: Release notes from CHANGELOG.md
         run: |
           version=$(python3 -c "import json;print(json.load(open('custom_components/spool_inventory/manifest.json'))['version'])")
-          awk -v v="$version" '$0 ~ "^## "v"( |$)" {on=1; next} /^## / {on=0} on' CHANGELOG.md > notes.md
+          awk -v v="$version" '$0 ~ "^## "v" " {on=1; next} /^## / {on=0} on' CHANGELOG.md > notes.md
           printf '\nSHA-256 of spool_inventory.zip:\n\n    %s\n' "$(cut -d' ' -f1 spool_inventory.zip.sha256)" >> notes.md
 
       - uses: actions/attest-build-provenance@v2
