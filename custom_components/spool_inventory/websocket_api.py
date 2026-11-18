@@ -51,6 +51,7 @@ def _payload(manager: SpoolManager) -> dict[str, Any]:
         "equipment": manager.equipment.payload(),
         "settings": manager.settings,
         "user_catalog": manager.user_catalog,
+        "prusalink_found": bool(manager.hass.config_entries.async_entries("prusalink")),
     }
 
 
@@ -171,6 +172,8 @@ async def ws_delete(
         vol.Required("type"): f"{DOMAIN}/settings",
         vol.Optional("low_threshold"): vol.All(vol.Coerce(float), vol.Range(min=0, max=5000)),
         vol.Optional("notify"): cv.boolean,
+        vol.Optional("prusalink_auto"): cv.boolean,
+        vol.Optional("prusalink_unload"): cv.boolean,
         vol.Optional("currency"): vol.All(cv.string, vol.Length(max=8)),
         vol.Optional("locations"): vol.All([vol.All(cv.string, vol.Length(max=60))], vol.Length(max=60)),
     }

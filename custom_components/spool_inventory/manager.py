@@ -181,6 +181,9 @@ class SpoolManager:
         self._user_catalog: list[dict[str, Any]] = []
         # Last known stock status per spool: ok / low / empty (for the alerts).
         self._alerts: dict[str, str] = {}
+        # PrusaLink tracking: the print being followed per printer, and the prints already billed.
+        self.auto_jobs: dict[str, dict[str, Any]] = {}
+        self.auto_done: list[str] = []
         # Set by the sensor platform; spool devices are children of this device.
         self.parent_device_id: str | None = None
 
@@ -204,6 +207,12 @@ class SpoolManager:
         catalog = data.get("catalog")
         if isinstance(catalog, list):
             self._user_catalog = [e for e in catalog if isinstance(e, dict)]
+        jobs = data.get("auto_jobs")
+        if isinstance(jobs, dict):
+            self.auto_jobs = {k: v for k, v in jobs.items() if isinstance(v, dict)}
+        done = data.get("auto_done")
+        if isinstance(done, list):
+            self.auto_done = [str(d) for d in done][-100:]
         self.equipment.load(data.get("equipment") if isinstance(data.get("equipment"), dict) else {})
         history = data.get("history")
         if isinstance(history, list):
@@ -237,6 +246,8 @@ class SpoolManager:
             "trash": self._trash,
             "history": self._history,
             "equipment": self.equipment.as_data(),
+            "auto_jobs": self.auto_jobs,
+            "auto_done": self.auto_done,
         }
 
     @callback
@@ -502,6 +513,30 @@ class SpoolManager:
         return spool
 
     @callback
+    def async_auto_use(self, spool_id: str, grams: float, note: str) -> Spool:
+        """Subtract filament that the printer reported (shown as "auto" in the history)."""
+        spool = self._require(spool_id)
+        before = spool.remaining_weight
+        spool.remaining_weight = max(0.0, spool.remaining_weight - float(grams))
+        self._log(spool, "used", before, spool.remaining_weight, f"auto: {note}")
+        self._touch(spool)
+        return spool
+
+    @callback
+    def async_clear_loaded(self) -> None:
+        """Nothing is in the printer any more: no spool is marked as loaded."""
+        for spool in self.spools:
+            if spool.loaded:
+                spool.loaded = False
+                self._log(spool, "unloaded", note="the printer reports no filament")
+                self._touch(spool)
+
+    @callback
+    def save_tracking(self) -> None:
+        """Persist the print being followed (so a restart does not lose it)."""
+        self._schedule_save()
+
+    @callback
     def async_delete(self, spool_id: str) -> Spool:
         """Remove a spool from the inventory."""
         spool = self._require(spool_id)
@@ -762,6 +797,10 @@ class SpoolManager:
             self._settings["low_threshold"] = float(changes["low_threshold"])
         if "notify" in changes:
             self._settings["notify"] = bool(changes["notify"])
+        if "prusalink_unload" in changes:
+            self._settings["prusalink_unload"] = bool(changes["prusalink_unload"])
+        if "prusalink_auto" in changes:
+            self._settings["prusalink_auto"] = bool(changes["prusalink_auto"])
         if "currency" in changes:
             self._settings["currency"] = str(changes["currency"]).strip()[:8] or DEFAULT_SETTINGS["currency"]
         if "locations" in changes:

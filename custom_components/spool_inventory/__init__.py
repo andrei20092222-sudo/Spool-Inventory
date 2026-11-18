@@ -17,6 +17,7 @@ from homeassistant.loader import async_get_integration
 
 from .const import DOMAIN, PANEL_URL_PATH, PANEL_WEBCOMPONENT, STATIC_URL
 from .manager import SpoolManager
+from .prusalink_usage import PrusaLinkTracker
 from .services import async_register_services
 from .websocket_api import async_register_websocket_api
 
@@ -51,6 +52,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: SpoolInventoryConfigEntr
     entry.async_on_unload(
         async_track_time_interval(hass, lambda _now: manager.equipment.check_tasks(), timedelta(hours=1))
     )
+
+    # optional: subtract filament automatically from PrusaLink prints (off until switched on)
+    tracker = PrusaLinkTracker(hass, manager)
+    tracker.start()
+    entry.async_on_unload(tracker.stop)
 
     version = (await async_get_integration(hass, DOMAIN)).version
     await panel_custom.async_register_panel(

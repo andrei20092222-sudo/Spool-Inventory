@@ -40,6 +40,8 @@ EVENT_EMPTY = f"{DOMAIN}_empty"
 DEFAULT_SETTINGS = {
     "low_threshold": 150.0,  # g; a spool below this (and above 0) is "low"
     "currency": "RON",  # shown next to prices and the stock value
+    "prusalink_auto": False,  # subtract filament automatically from the loaded spool (PrusaLink)
+    "prusalink_unload": False,  # clear the loaded spool when the printer reports no filament
     "notify": True,  # create a persistent notification when a spool gets low / empty
     "locations": ["Bedroom storage", "Drier", "Small bedroom storage"],
 }
