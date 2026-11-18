@@ -4,16 +4,26 @@ All notable changes to Spool Inventory, newest first. The version number is the 
 Updating never needs anything beyond copying the folder over and restarting Home Assistant
 (plus Ctrl+F5 in the browser for panel changes).
 
-## 0.11.3
+## 0.11.3 - Unload clearing and everything since 0.9.2
+
+Everything new since 0.9.2, in short:
+
+- **What fits?**: type the grams a print needs and see which spools have enough, by material and color family.
+- **By color** tab: one row per color family, tap to see every spool of that color whatever the material.
+- **Automatic subtraction (beta, off by default)**: with a PrusaLink printer in Home Assistant, the filament of a print is subtracted from the loaded spool by itself (full on finish, a share on cancel). Tested on a Core One+.
+- **Unload clears the loaded spool (optional, off by default)**, described below.
+- Issue forms for bug reports and ideas, and a "Printers and limits" section in the README.
+
+Details of this version:
 
 - New optional setting **Clear "loaded in printer" when the printer reports no filament** (off by default, shown when the PrusaLink integration is set up). When the printer's Material sensor changes from a material to `---` (you unloaded the filament), no spool is marked as loaded any more, and the history shows "Unloaded from printer". Nothing is ever marked as loaded automatically: you pick the spool when you load filament.
 - It ignores "unavailable" (printer switched off, Home Assistant restarting) and anything while a print is running or paused, so a filament runout in the middle of a print does not clear the spool.
 
-## 0.11.2
+## 0.11.2 - Retries at the start of a print
 
 - Automatic subtraction no longer gives up at the very start of a print. Right after a print begins, the printer may not yet report the file or its filament numbers, so it now tries again after 10, 20, 40, 60 and 120 seconds while the print runs. A notification is only shown when all of those tries failed, and it says why. A last look at the file is also taken when the print ends.
 
-## 0.11.1
+## 0.11.1 - Version in notifications
 
 - Notifications about automatic subtraction now end with the installed version, so it is clear which copy is running.
 
