@@ -40,7 +40,7 @@ const fmtNum = (v) => v.toLocaleString(undefined, { minimumFractionDigits: 2, ma
 const REFILL_G = 900; // Prusament sells spool-less refills of 900 g (spools are 1000 g)
 const hasRefill = (vendor) => String(vendor || "").trim().toLowerCase() === "prusament";
 const fmtKg = (g) => (g >= 1000 ? `${(g / 1000).toFixed(2)} kg` : fmtG(g));
-const GLYPHS = { plus: "+", scale: "⚖", "minus-circle-outline": "−", pencil: "✎", "delete-outline": "✕", table: "☰", "view-grid": "▦", "printer-3d": "🖨", "cart-outline": "🛒", cart: "🛒", cog: "⚙", "content-copy": "⧉", "archive-outline": "▣", "archive-arrow-up-outline": "↩", "cart-plus": "🛒+", "download": "⇩", "upload": "⇧", "scale-balance": "⚖", history: "⟲", wrench: "🔧", plus: "+" };
+const GLYPHS = { plus: "+", scale: "⚖", "minus-circle-outline": "−", pencil: "✎", "delete-outline": "✕", table: "☰", "view-grid": "▦", "printer-3d": "🖨", "cart-outline": "🛒", cart: "🛒", cog: "⚙", "content-copy": "⧉", "archive-outline": "▣", "archive-arrow-up-outline": "↩", "cart-plus": "🛒+", "download": "⇩", "upload": "⇧", "scale-balance": "⚖", history: "⟲", wrench: "🔧", magnify: "🔍", plus: "+" };
 // Home Assistant's own icon element when available, a plain symbol otherwise.
 const icon = (name) => (customElements.get("ha-icon") ? h("ha-icon", { icon: `mdi:${name}` }) : h("span", { "aria-hidden": "true" }, GLYPHS[name] || "•"));
 
@@ -78,6 +78,8 @@ input[type=color] { padding:2px; width:44px; height:38px; cursor:pointer; }
 .stat.on { outline:2px solid var(--primary-color); outline-offset:-1px; }
 .stat .gear { position:absolute; top:4px; right:4px; }
 button.bare.on { color:var(--primary-color); }
+.famrow { cursor:pointer; } .famrow:hover { background:var(--secondary-background-color, rgba(128,128,128,.08)); } .famlist { padding:0 0 4px 22px; }
+.fitrow { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--divider-color, rgba(128,128,128,.3)); }
 .chip.info { background:var(--primary-color); color:var(--text-primary-color, #fff); }
 .filterbar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:12px; }
 .loc { margin-bottom:16px; } .loc h2 { font-size:16px; font-weight:500; margin:0 0 8px; display:flex; gap:10px; align-items:baseline; flex-wrap:wrap; }
@@ -158,6 +160,32 @@ details[open] summary { margin-bottom:10px; } details .grid { display:grid; gap:
 @media (max-width:600px) { .stats { grid-template-columns:repeat(2, 1fr); } .wrap { padding:10px; } .two { grid-template-columns:1fr; } .stat b { font-size:20px; } }
 `;
 
+// Colors are grouped into broad families for "What fits?": "Pistachio Green" and "Emerald Green" are both Green.
+const COLOR_WORDS = [
+  ["Black", ["black", "onyx", "ebony"]], ["White", ["white", "ivory", "snow"]],
+  ["Grey", ["grey", "gray", "silver", "graphite", "charcoal", "gunmetal", "ash"]],
+  ["Red", ["red", "crimson", "scarlet", "burgundy", "maroon"]], ["Orange", ["orange", "tangerine"]],
+  ["Yellow", ["yellow", "gold", "lemon", "amber"]], ["Green", ["green", "lime", "olive", "mint", "emerald", "pistachio", "forest", "jade"]],
+  ["Blue", ["blue", "navy", "cyan", "turquoise", "teal", "azure", "sky", "cobalt"]], ["Purple", ["purple", "violet", "lilac", "lavender", "indigo"]],
+  ["Pink", ["pink", "magenta", "rose", "fuchsia"]], ["Brown", ["brown", "beige", "tan", "copper", "bronze", "chocolate", "coffee", "wood"]],
+  ["Clear", ["clear", "transparent", "natural", "translucent"]],
+];
+const FAMILY_HEX = { Black: "#1a1a1a", White: "#f2f2f2", Grey: "#8a8a8a", Red: "#d32f2f", Orange: "#f57c00", Yellow: "#fbc02d", Green: "#388e3c",
+  Blue: "#1976d2", Purple: "#7b1fa2", Pink: "#ec407a", Brown: "#6d4c41", Clear: "#cfd8dc", Other: "#808080" };
+function colorFamily(p) {
+  const words = String(p.color_name || "").toLowerCase().split(/[^a-z]+/).filter(Boolean);
+  for (let i = words.length - 1; i >= 0; i--) { const hit = COLOR_WORDS.find(([, ws]) => ws.includes(words[i])); if (hit) return hit[0]; }
+  const m = /^#?([0-9a-f]{6})$/i.exec(p.color_hex || ""); if (!m) return "Other";
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(m[1].slice(i, i + 2), 16) / 255);
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
+  const sat = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+  if (sat < 0.15 || l < 0.1 || l > 0.92) return l < 0.18 ? "Black" : l > 0.85 ? "White" : "Grey";
+  let hue = d === 0 ? 0 : mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  hue = (hue * 60 + 360) % 360;
+  if (hue >= 15 && hue < 45 && l < 0.4) return "Brown";
+  return hue < 15 || hue >= 345 ? "Red" : hue < 45 ? "Orange" : hue < 70 ? "Yellow" : hue < 165 ? "Green" : hue < 260 ? "Blue" : hue < 300 ? "Purple" : "Pink";
+}
+
 class SpoolInventoryPanel extends HTMLElement {
   constructor() {
     super();
@@ -212,8 +240,10 @@ class SpoolInventoryPanel extends HTMLElement {
       this.s.all = msg.spools; this.s.spools = msg.spools.filter((p) => !p.archived); this.s.archived = msg.spools.filter((p) => p.archived);
       this.s.trash = msg.trash || []; this.s.equipment = msg.equipment || { printers: [], tasks: [], items: [] }; this.s.summary = msg.summary; this.s.loaded = true;
       this.s.settings = msg.settings || null;
+      this.s.prusalink = !!msg.prusalink_found;
       if (JSON.stringify(msg.user_catalog || []) !== JSON.stringify(this.s.userCatalog)) { this.s.userCatalog = msg.user_catalog || []; this._mergeCatalog(); }
       this._stats(); this._main(); this._syncToolbar();
+      this._onData?.();
     }, { type: `${WS}/subscribe` });
     this._unsub.catch((err) => this._toast(this._err(err), true));
   }
@@ -321,14 +351,16 @@ class SpoolInventoryPanel extends HTMLElement {
   }
 
   groups() {
+    // one group per color family (all materials together), in the usual color order
+    const order = [...COLOR_WORDS.map(([n]) => n), "Other"];
     const map = new Map();
     for (const p of this.s.spools) {
-      const k = `${p.material}|${p.color_name}`.toLowerCase();
-      if (!map.has(k)) map.set(k, { material: p.material, color: p.color_name || "(no color name)", hex: p.color_hex, total: 0, spools: [] });
-      const g = map.get(k);
+      const fam = colorFamily(p);
+      if (!map.has(fam)) map.set(fam, { family: fam, hex: FAMILY_HEX[fam] || "#808080", total: 0, spools: [] });
+      const g = map.get(fam);
       g.total += p.remaining_weight; g.spools.push(p);
     }
-    return [...map.values()].sort((a, b) => a.material.localeCompare(b.material) || a.color.localeCompare(b.color));
+    return [...map.values()].sort((a, b) => order.indexOf(a.family) - order.indexOf(b.family));
   }
 
   /* ---------- static chrome ---------- */
@@ -396,6 +428,7 @@ class SpoolInventoryPanel extends HTMLElement {
           onChange: (e) => { s.hideEmpty = e.target.checked; this._main(); } }), " hide empty"),
         h("span", { class: "grow" }),
         this.admin && s.spools.some((p) => p.loaded) ? h("button", { "data-use-loaded": "", title: "Subtract filament from the spool that is in the printer", onClick: () => this.useLoadedDialog() }, icon("minus-circle-outline"), "Used in printer") : null,
+        s.spools.length ? h("button", { "data-what-fits": "", title: "Which of my spools has enough filament for a print", onClick: () => this.whatFits() }, icon("magnify"), "What fits?") : null,
         this.admin && s.spools.length ? h("button", { "data-weigh-session": "", title: "Weigh several spools one after another", onClick: () => this.weighSession() }, icon("scale"), "Weigh session") : null,
         h("div", { class: "seg" },
           h("button", { class: this.view === "table" ? "on" : "", title: "Table", "aria-label": "Table view", onClick: () => { s.view = "table"; this._toolbar(); this._main(); } }, icon("table")),
@@ -490,7 +523,7 @@ class SpoolInventoryPanel extends HTMLElement {
     const LABEL = { added: "Added", edited: "Edited", weighed: "Weighed", used: "Used filament", deleted: "Deleted", restored: "Restored",
       archived: "Moved to archive", unarchived: "Back from archive", "bought another": "Bought another",
       "maintenance done": "Maintenance done", "task added": "Task added", "item added": "Item added", "item changed": "Item changed", "item deleted": "Item deleted",
-      "printer added": "Printer added", "printer deleted": "Printer deleted" };
+      unloaded: "Unloaded from printer", "printer added": "Printer added", "printer deleted": "Printer deleted" };
     const when = (iso) => { const d = new Date(iso); return isNaN(d) ? iso : d.toLocaleString([], { dateStyle: "medium", timeStyle: "short" }); };
     return rows.map((e) => {
       const spool = this.s.all.find((p) => p.id === e.id);
@@ -498,7 +531,7 @@ class SpoolInventoryPanel extends HTMLElement {
       const delta = hasAmounts ? `${fmtG(e.before)} → ${fmtG(e.after)} (${e.after - e.before > 0 ? "+" : "−"}${Math.round(Math.abs(e.after - e.before) * 10) / 10} g)` : e.after !== null && e.action === "added" ? fmtG(e.after) : "";
       const canSetBack = hasAmounts && spool && this.admin && Math.abs(spool.remaining_weight - e.before) > 0.04;
       return h("div", { class: "hrow", "data-history": e.action },
-        h("div", {}, h("b", {}, LABEL[e.action] || e.action), showName ? ` · ${e.name}` : "", delta ? ` · ${delta}` : "", e.note && e.action !== "used" ? h("small", {}, ` (${e.note})`) : null,
+        h("div", {}, h("b", {}, LABEL[e.action] || e.action), showName ? ` · ${e.name}` : "", delta ? ` · ${delta}` : "", e.note && (e.action !== "used" || e.note.startsWith("auto:")) ? h("small", {}, ` (${e.note})`) : null,
           h("small", { class: "wd" }, when(e.t))),
         canSetBack ? h("button", { "data-set-back": e.id, title: `Set this spool back to ${fmtG(e.before)}`, onClick: async () => {
           try { await this._call({ type: "update", spool_id: e.id, remaining_weight: e.before }); this._toast(`Set back to ${fmtG(e.before)}`); this._reloadHistory?.(); } catch {} } }, `Set back to ${fmtG(e.before)}`) : null);
@@ -681,6 +714,58 @@ class SpoolInventoryPanel extends HTMLElement {
   }
 
   /** Weigh many spools in a row: type the scale reading, press Enter, next spool. */
+  /** "What fits?": which spools have enough filament left for a print. The lists follow the inventory live. */
+  whatFits() {
+    const st = { material: "", color: "" };
+    const grams = h("input", { type: "number", min: "0", step: "any", placeholder: "e.g. 85", "data-fit-grams": "", inputmode: "decimal" });
+    const material = h("select", { "data-fit-material": "", "aria-label": "Material" });
+    const color = h("select", { "data-fit-color": "", "aria-label": "Color" });
+    const area = h("div", { "data-fit-area": "" });
+    const key = (p) => colorFamily(p).toLowerCase();
+    const setOptions = (sel, options, current) => {
+      sel.replaceChildren(...options.map(([v, l]) => h("option", { value: v }, l)));
+      sel.value = options.some(([v]) => v === current) ? current : (options[0]?.[0] ?? "");
+      return sel.value;
+    };
+    const row = (p, need) => {
+      const after = p.remaining_weight - need;
+      const tight = after >= 0 && after < Math.max(10, need * 0.1);
+      return h("div", { class: "fitrow", "data-fit-spool": p.name },
+        h("div", { class: "name" }, this._badge(p.vendor), h("span", { class: "swatch", style: { background: p.color_hex } }),
+          h("div", {}, h("b", {}, p.name), h("div", { class: "hint" }, `${fmtG(p.remaining_weight)} left${after >= 0 ? `, ${fmtG(after)} after this print` : `, ${fmtG(-after)} short`}${p.location ? ` · ${p.location}` : ""}`),
+            h("div", {}, [tight ? h("span", { class: "chip warn", title: "The slicer estimate can be a bit off, so this is cutting it close" }, "tight") : null, ...this._chips(p, false)]))),
+        this.admin && after >= 0 && !p.loaded ? h("button", { "data-fit-load": "", title: "Mark this spool as loaded in the printer", onClick: () => this._flag(p, "loaded") }, icon("printer-3d"), "Load") : null);
+    };
+    const render = () => {
+      if (!area.isConnected) { this._onData = null; return; }
+      const stock = this.s.spools.filter((p) => p.remaining_weight > 0);
+      const mats = [...new Set(stock.map((p) => p.material))].sort((a, b) => a.localeCompare(b));
+      st.material = setOptions(material, mats.map((m) => [m, m]), st.material);
+      const ofMat = stock.filter((p) => p.material === st.material);
+      const colors = new Map();
+      for (const p of ofMat) { const k = key(p); const c = colors.get(k) || { name: colorFamily(p), n: 0 }; c.n++; colors.set(k, c); }
+      st.color = setOptions(color, [["", `Any color (${ofMat.length})`], ...[...colors].sort((a, b) => a[1].name.localeCompare(b[1].name)).map(([k, c]) => [k, `${c.name} (${c.n})`])], st.color);
+      const need = num(grams.value);
+      if (!mats.length) return area.replaceChildren(h("p", { class: "hint" }, "There are no spools with filament left."));
+      if (need === null || need <= 0) return area.replaceChildren(h("p", { class: "hint" }, "Enter the grams the print needs. Your slicer shows it for the sliced file."));
+      const match = ofMat.filter((p) => !st.color || key(p) === st.color);
+      const fits = match.filter((p) => p.remaining_weight >= need)
+        .sort((a, b) => (b.loaded ? 1 : 0) - (a.loaded ? 1 : 0) || (a.remaining_weight - need) - (b.remaining_weight - need) || a.name.localeCompare(b.name));
+      const small = match.filter((p) => p.remaining_weight < need).sort((a, b) => b.remaining_weight - a.remaining_weight);
+      const out = [h("p", { "data-fit-count": "" }, fits.length ? `${fits.length} ${fits.length === 1 ? "spool has" : "spools have"} enough for ${fmtG(need)}:` : `No spool has enough for ${fmtG(need)}.`),
+        ...fits.map((p) => row(p, need))];
+      if (small.length) out.push(h("p", { class: "hint", style: { marginTop: "12px" } }, "Not enough left:"), ...small.map((p) => row(p, need)));
+      area.replaceChildren(...out);
+    };
+    grams.addEventListener("input", render);
+    color.addEventListener("change", () => { st.color = color.value; render(); });
+    material.addEventListener("change", () => { st.material = material.value; st.color = ""; render(); });
+    this._onData = render;
+    this._modal("What fits?", [this.field("Material", material), this.field("Color", color), this.field("Grams the print needs", grams, "Spools with the least left over come first, the one in the printer on top."), area],
+      [{ label: "Close", primary: true, run: (c) => { this._onData = null; c(); } }]);
+    render(); grams.focus();
+  }
+
   weighSession() {
     const locs = this._locOptions();
     const scopes = [["never", "Never weighed"], ["all", "All spools"], ...locs.map((l) => [`loc:${l}`, `Only ${l}`])];
@@ -870,18 +955,33 @@ class SpoolInventoryPanel extends HTMLElement {
     const max = Math.max(...groups.map((g) => g.total), 1);
     const total = groups.reduce((a, g) => a + g.total, 0);
     const mats = new Map();
-    groups.forEach((g) => mats.set(g.material, (mats.get(g.material) || 0) + g.total));
+    this.s.spools.forEach((p) => mats.set(p.material, (mats.get(p.material) || 0) + p.remaining_weight));
+    const open = (this._openFamilies ||= new Set());
+    const rows = [];
+    for (const g of groups) {
+      const isOpen = open.has(g.family);
+      const byMat = new Map();
+      g.spools.forEach((p) => byMat.set(p.material, (byMat.get(p.material) || 0) + p.remaining_weight));
+      rows.push(h("tr", { "data-family": g.family, class: "famrow", onClick: () => { isOpen ? open.delete(g.family) : open.add(g.family); this._main(); } },
+        h("td", {}, h("button", { class: "bare", "aria-expanded": String(isOpen), "aria-label": `${isOpen ? "Hide" : "Show"} ${g.family} filaments`, style: { display: "flex", alignItems: "center", gap: "8px" } },
+          h("span", {}, isOpen ? "▾" : "▸"), h("span", { class: "swatch", style: { background: g.hex } }), h("b", {}, g.family))),
+        h("td", { class: "num" }, g.spools.length),
+        h("td", {}, h("b", {}, fmtG(g.total)), h("div", { class: "bar-bg" }, h("div", { class: "bar-fg", style: { width: `${(g.total / max) * 100}%` } }))),
+        h("td", {}, [...byMat].sort((a, b) => b[1] - a[1]).map(([m, w]) => h("span", { class: "chip" }, `${m} ${fmtG(w)}`)))));
+      if (isOpen) {
+        const list = [...g.spools].sort((a, b) => a.material.localeCompare(b.material) || (a.name || "").localeCompare(b.name || ""));
+        rows.push(h("tr", { "data-family-list": g.family }, h("td", { colspan: "4" }, h("div", { class: "famlist" }, list.map((p) =>
+          h("div", { class: "fitrow", "data-family-spool": p.id },
+            h("div", { class: "name" }, this._badge(p.vendor), h("span", { class: "swatch", style: { background: p.color_hex } }), h("span", {}, p.name), h("small", {}, ` ${p.material}`)),
+            h("span", { class: `chip ${p.remaining_weight <= 0 ? "err" : p.remaining_weight < this.low ? "warn" : ""}` }, fmtG(p.remaining_weight))))))));
+      }
+    }
     return h("div", {},
       h("div", { class: "panel scroll" }, h("table", {},
-        h("thead", {}, h("tr", {}, h("th", {}, "Color"), h("th", {}, "Material"), h("th", { class: "num" }, "Spools"), h("th", {}, "Remaining"), h("th", {}, "Per spool"))),
-        h("tbody", {}, groups.map((g) => h("tr", { "data-group": `${g.material}|${g.color}` },
-          h("td", {}, h("div", { class: "name" }, h("span", { class: "swatch", style: { background: g.hex } }), g.color)),
-          h("td", {}, g.material), h("td", { class: "num" }, g.spools.length),
-          h("td", {}, h("b", {}, fmtG(g.total)), h("div", { class: "bar-bg" }, h("div", { class: "bar-fg", style: { width: `${(g.total / max) * 100}%` } }))),
-          h("td", {}, g.spools.sort((a, b) => b.remaining_weight - a.remaining_weight).map((p) =>
-            h("span", { class: `chip ${p.remaining_weight <= 0 ? "err" : p.remaining_weight < this.low ? "warn" : ""}` }, `${p.vendor} ${fmtG(p.remaining_weight)}`)))))),
-        h("tfoot", {}, h("tr", {}, h("td", { colspan: "2" }, "Total"), h("td", { class: "num" }, this.s.spools.length), h("td", { colspan: "2" }, fmtKg(total)))))),
-      h("p", { class: "hint" }, "By material: ", [...mats].map(([m, g]) => h("span", { class: "chip" }, `${m} ${fmtKg(g)}`))));
+        h("thead", {}, h("tr", {}, h("th", {}, "Color"), h("th", { class: "num" }, "Spools"), h("th", {}, "Remaining"), h("th", {}, "Materials"))),
+        h("tbody", {}, rows),
+        h("tfoot", {}, h("tr", {}, h("td", {}, "Total"), h("td", { class: "num" }, this.s.spools.length), h("td", { colspan: "2" }, fmtKg(total)))))),
+      h("p", { class: "hint" }, "Tap a color to see its spools, whatever the material. By material: ", [...mats].map(([m, g]) => h("span", { class: "chip" }, `${m} ${fmtKg(g)}`))));
   }
 
   _locationsView() {
@@ -942,6 +1042,8 @@ class SpoolInventoryPanel extends HTMLElement {
     const st = this.s.settings || { low_threshold: DEFAULT_LOW_G, notify: true, locations: [] };
     const thr = h("input", { type: "number", min: "0", step: "any", value: String(st.low_threshold), "aria-label": "Low stock threshold" });
     const notify = h("input", { type: "checkbox", checked: !!st.notify, "aria-label": "Notify" });
+    const auto = h("input", { type: "checkbox", checked: !!st.prusalink_auto, "data-prusalink-auto": "", "aria-label": "Subtract automatically (PrusaLink)" });
+    const unload = h("input", { type: "checkbox", checked: !!st.prusalink_unload, "data-prusalink-unload": "", "aria-label": "Clear the loaded spool when the printer is unloaded" });
     const curOpts = ["RON", "EUR", "USD", "GBP"];
     const curCur = st.currency || "RON";
     const curText = h("input", { type: "text", maxlength: "8", "data-currency-text": "", value: curOpts.includes(curCur) ? "" : curCur, placeholder: "e.g. CHF", hidden: curOpts.includes(curCur), "aria-label": "Currency (other)" });
@@ -979,6 +1081,10 @@ class SpoolInventoryPanel extends HTMLElement {
       this.field("Low stock threshold, g", thr, "A spool under this is “low”. Empty spools are always flagged."),
       h("label", { class: "row2" }, notify, h("span", {}, "Show a Home Assistant notification when a spool gets low or empty")),
       h("p", { class: "hint" }, "Home Assistant also fires the events spool_inventory_low and spool_inventory_empty, so an automation can send a phone message."),
+      this.s.prusalink ? this.field("Automatic subtraction (beta)", h("label", { class: "row2" }, auto, h("span", {}, "Subtract filament from the loaded spool when a print ends")),
+        "Uses your PrusaLink printer in Home Assistant. Reads the slicer’s estimate when a print starts, subtracts it when it finishes, and a share of it if the print is cancelled. Needs exactly one spool marked as loaded. Shown as “auto” in the history; undo with “Set back to”. Applies from the next print.") : null,
+      this.s.prusalink ? this.field("Unloading", h("label", { class: "row2" }, unload, h("span", {}, "Clear “loaded in printer” when the printer reports no filament")),
+        "Uses the Material sensor of your PrusaLink printer. When you unload filament, no spool is marked as loaded any more, so you pick the spool again next time. Nothing is ever marked as loaded automatically.") : null,
       this.field("Currency for prices", curSel, "Shown on the value card and next to prices."),
       this.field("My locations (one per line)", locs, "Offered when you add or move a spool."),
       this.field("My catalog entries", mine),
@@ -992,7 +1098,7 @@ class SpoolInventoryPanel extends HTMLElement {
       const v = num(thr.value); if (v === null || v < 0) return this._toast("Enter a threshold in grams", true);
       const currency = curPick.value === "__other__" ? curText.value.trim() : curPick.value;
       if (!currency) return this._toast("Enter a currency", true);
-      try { await this._call({ type: "settings", low_threshold: v, notify: notify.checked, currency, locations: locs.value.split("\n") }); c(); this._toast("Settings saved"); } catch {} } }]);
+      try { await this._call({ type: "settings", low_threshold: v, notify: notify.checked, ...(this.s.prusalink ? { prusalink_auto: auto.checked, prusalink_unload: unload.checked } : {}), currency, locations: locs.value.split("\n") }); c(); this._toast("Settings saved"); } catch {} } }]);
   }
 
   deleteDialog(p) {
