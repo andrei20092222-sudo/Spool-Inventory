@@ -111,7 +111,7 @@ async def test_equipment_persists_and_is_in_backup(hass: HomeAssistant, hass_sto
     await m.async_flush()
     saved = hass_storage["spool_inventory.spools"]["data"]["equipment"]
     assert len(saved["printers"]) == 1 and len(saved["tasks"]) == 6 and len(saved["items"]) == 1
-    assert hass.config_entries.async_reload(entry.entry_id)
+    assert await hass.config_entries.async_reload(entry.entry_id)
     await hass.config_entries.async_reload(entry.entry_id)
     await hass.async_block_till_done()
     eq = entry.runtime_data.equipment
