@@ -6,6 +6,8 @@ A local filament inventory for 3D printing, built as a Home Assistant custom int
 No cloud, no extra server, no account. It adds a **Filament** entry to the sidebar, and every spool also
 becomes a device with a sensor (grams left) for automations and dashboards.
 
+[![Support me on Ko-fi](https://img.shields.io/badge/Ko--fi-Support_me-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/mariusandreimihalache)
+
 ![Overview](docs/images/overview.png)
 
 > **Made with AI.** I built this together with [Claude](https://claude.ai), an AI assistant made by Anthropic.
@@ -219,6 +221,15 @@ made by Anthropic, and we built it together over a couple of weeks.
   stored in your Home Assistant's `.storage` folder, and you can read the code to confirm that.
 - **Use at your own risk.** It's provided as is under the MIT license, without warranty. Please back up Home Assistant
   before installing or updating.
+
+## Support
+
+Spool Inventory is free and stays free, and it works the same for everyone. If it saves you some time and you feel
+like it, you can [buy me a coffee on Ko-fi](https://ko-fi.com/mariusandreimihalache). It's completely optional,
+it doesn't get you extra support or features, and it mostly goes to filament and parts for testing.
+Bug reports and ideas are just as welcome on GitHub.
+
+[![Support me on Ko-fi](https://img.shields.io/badge/Ko--fi-Support_me-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/mariusandreimihalache)
 
 ## Disclaimer
 
