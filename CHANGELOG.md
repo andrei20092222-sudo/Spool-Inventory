@@ -4,6 +4,22 @@ All notable changes to Spool Inventory, newest first. The version number is the 
 Updating never needs anything beyond copying the folder over and restarting Home Assistant
 (plus Ctrl+F5 in the browser for panel changes).
 
+## 1.0.0 - First stable release
+
+The first release that is no longer a pre-release. Nothing changes in the stored data and nothing needs to be set
+up again: copy the folder over and restart Home Assistant (plus Ctrl+F5 in the browser for the panel).
+
+What the stable part covers: the inventory (spools, weigh sessions, low and empty alerts, reorder list, locations,
+archive, history with undo, backups), the catalog of about 150 brands, **What fits?**, the **By color** and
+**By location** views, the printer tab (maintenance, parts, shopping list), and the option to clear the
+loaded spool when the printer is unloaded.
+
+**Automatic subtraction stays in beta.** It works on the Core One+ it was tested on, but it has only seen a few
+weeks of real prints and one printer. It is still off by default, and the plan is to take the beta label off once
+it has had more testing. Weigh your spools now and then.
+
+- No code changes compared to 0.11.3, apart from the version number.
+
 ## 0.11.3 - Unload clearing and everything since 0.9.2
 
 Everything new since 0.9.2, in short:

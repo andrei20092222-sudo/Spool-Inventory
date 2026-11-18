@@ -94,7 +94,7 @@ the **Filament** sidebar entry appears. Updating keeps your data.
   and a "..." menu with edit, history, duplicate, archive, delete.
 - **What fits?** (toolbar): pick a material (and color), type the grams the print needs, and get the spools with enough
   filament left. The lists only show what you own, and colors are grouped into families (all greens together, all greys together).
-- **Automatic subtraction (beta)**: needs the official PrusaLink integration already set up in Home Assistant. Switch it
+- **Automatic subtraction (beta)**: stays in beta for now while I keep testing it on real prints. It needs the official PrusaLink integration already set up in Home Assistant. Switch it
   on in Settings. When a print starts, the filament estimate is read from the print file; when it finishes, it is
   subtracted from the spool marked as loaded. If a print is cancelled or fails, the share printed so far is subtracted.
   It is the slicer's estimate, so it is shown as "auto" in the history, can be undone with "Set back to", and weighing
@@ -205,7 +205,7 @@ made by Anthropic, and we built it together over a couple of weeks.
 - **I steered and tested.** I came up with the idea, decided what goes in (weigh sessions, the reorder list, the printer
   maintenance tab, and so on) and what stays out, and I run it on my own Home Assistant. When something looked
   wrong or was clumsy to use, I said so and we changed it. I'm the one who publishes the releases and answers issues.
-- **How it was checked.** Claude ran automatic tests (43 tests with the Home Assistant test framework, plus browser
+- **How it was checked.** Claude ran automatic tests (about 70 tests with the Home Assistant test framework, plus browser
   tests of the panel) and the `ruff` code checker. The same tests, Home Assistant's `hassfest` and the HACS check also run
   on GitHub for every change. Passing tests don't prove there are no bugs.
 - **No independent review yet.** As far as I know, nobody else has read the code line by line, and it has had limited
@@ -218,7 +218,7 @@ made by Anthropic, and we built it together over a couple of weeks.
 - **Your data stays with you.** The integration makes no network calls and sends nothing anywhere. Your inventory is
   stored in your Home Assistant's `.storage` folder, and you can read the code to confirm that.
 - **Use at your own risk.** It's provided as is under the MIT license, without warranty. Please back up Home Assistant
-  before installing a pre-release.
+  before installing or updating.
 
 ## Disclaimer
 
