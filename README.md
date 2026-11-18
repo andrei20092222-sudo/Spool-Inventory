@@ -6,7 +6,7 @@ A local filament inventory for 3D printing, built as a Home Assistant custom int
 No cloud, no extra server, no account. It adds a **Filament** entry to the sidebar, and every spool also
 becomes a device with a sensor (grams left) for automations and dashboards.
 
-[![Support me on Ko-fi](https://img.shields.io/badge/Ko--fi-Support_me-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/mariusandreimihalache)
+<a href="https://ko-fi.com/mariusandreimihalache"><img src="docs/images/kofi.png" width="200" alt="Support me on Ko-fi"></a>
 
 ![Overview](docs/images/overview.png)
 
@@ -229,7 +229,7 @@ like it, you can [buy me a coffee on Ko-fi](https://ko-fi.com/mariusandreimihala
 it doesn't get you extra support or features, and it mostly goes to filament and parts for testing.
 Bug reports and ideas are just as welcome on GitHub.
 
-[![Support me on Ko-fi](https://img.shields.io/badge/Ko--fi-Support_me-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/mariusandreimihalache)
+<a href="https://ko-fi.com/mariusandreimihalache"><img src="docs/images/kofi.png" width="200" alt="Support me on Ko-fi"></a>
 
 ## Disclaimer
 
