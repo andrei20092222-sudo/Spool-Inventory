@@ -48,6 +48,24 @@ becomes a device with a sensor (grams left) for automations and dashboards.
 
 Home Assistant 2026.9 or newer. Developed and tested on a Raspberry Pi installation.
 
+## Printers and limits
+
+The inventory itself (spools, weighing, "What fits?", history, backups) does not depend on any printer.
+Only the optional automatic subtraction needs one, and it has some limits for now:
+
+- **Tested on one printer only:** a Prusa Core One+ with PrusaLink. I don't own another modern printer, so
+  I could not try anything else. Other printers with a Buddy board and PrusaLink (MK4S, MK3.9S, Core One L, XL)
+  use the same interface, so they should work, but this is untested. Reports are welcome, good or bad.
+- **Needs the official PrusaLink integration** of Home Assistant, set up and working.
+- **One printer:** the "loaded in printer" mark is a single one for the whole inventory. Two printers at the
+  same time are not supported yet.
+- **One material per print:** MMU and multi-tool setups (XL with several tools, INDX) are not supported yet.
+  Such a print is recognized, you get a notification, and nothing is subtracted.
+- **Older printers:** a MK3S+ and other printers with the old PrusaLink (Raspberry Pi Zero) do not work with
+  the Home Assistant PrusaLink integration, so they are not supported. OctoPrint may come later, if it turns out
+  to be possible.
+- **It is an estimate:** the number comes from the slicer, so weigh the spool now and then.
+
 ## Installation
 
 ### HACS (custom repository)
@@ -163,8 +181,8 @@ upstream in the database, so everyone benefits.
 
 ## Not included yet
 
-Automatic deduction from a print (PrusaLink), NFC / OpenPrintTag tags, per-spool dashboard cards, drying tracker,
-QR labels. `tag_id` is stored but unused.
+Automatic deduction for other printers (maybe OctoPrint later), MMU / multi-tool prints, more than one printer,
+NFC / OpenPrintTag tags, per-spool dashboard cards, drying tracker, QR labels. `tag_id` is stored but unused.
 
 ## Development
 
