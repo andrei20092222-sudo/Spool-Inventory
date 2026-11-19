@@ -31,7 +31,7 @@ from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
 from .manager import SpoolManager
-from .printfile import from_job_meta, read_estimate
+from .printfile import file_refs, from_job_meta, read_estimate
 
 _LOGGER = logging.getLogger(__name__)
 VERSION = json.loads((Path(__file__).parent / "manifest.json").read_text())["version"]
@@ -245,16 +245,7 @@ class PrusaLinkTracker:
                     return
                 record["key"], record["file"] = key, name
                 record["progress"] = max(float(record.get("progress") or 0), float(job.get("progress") or 0))
-                record["refs"] = [
-                    r
-                    for r in (
-                        (file.get("refs") or {}).get("download"),
-                        f"/api/v1/files{file['path']}" if file.get("path") else None,
-                        file.get("path"),
-                        file.get("display_path"),
-                    )
-                    if r
-                ]
+                record["refs"] = file_refs(file)
                 _LOGGER.debug("PrusaLink job file: %s", file)
                 # the printer often reports the numbers with the job; the file is the fallback
                 meta = from_job_meta(file.get("meta"))
@@ -280,7 +271,7 @@ class PrusaLinkTracker:
         record["reason"] = reason
         if record["tries"] > len(RETRY_DELAYS):
             record["gave_up"] = True
-            self._notify(entry_id, f"“{record['file']}”: {reason}. Nothing will be subtracted automatically for this print.")
+            self._notify(entry_id, f"“{record['file']}”: {reason}. The file will be looked at once more when the print ends. If that fails too, nothing is subtracted and you can use “Used in printer”.")
             return
         self._schedule_retry(entry_id, RETRY_DELAYS[record["tries"] - 1])
 
@@ -336,8 +327,7 @@ class PrusaLinkTracker:
                 except Exception as err:  # noqa: BLE001
                     job["reason"] = f"could not read the file ({err})"
             if job.get("grams") is None:
-                if not job.get("gave_up"):
-                    self._notify(entry_id, f"“{job['file']}”: {job.get('reason') or 'no filament information'}. Nothing was subtracted for this print.")
+                self._notify(entry_id, f"“{job['file']}”: {job.get('reason') or 'no filament information'}. Nothing was subtracted for this print. Use “Used in printer” to subtract it by hand.")
                 return
             progress = float(job.get("progress") or 0)
             full = state == "finished" or (state in ("idle", "ready") and progress >= 99)

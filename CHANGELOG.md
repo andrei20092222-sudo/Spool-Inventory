@@ -4,6 +4,17 @@ All notable changes to Spool Inventory, newest first. The version number is the 
 Updating never needs anything beyond copying the folder over and restarting Home Assistant
 (plus Ctrl+F5 in the browser for panel changes).
 
+## 1.0.1 - Prints started from the USB stick
+
+- A print started from a file on the printer's USB stick reports only the folder (`/usb`) and the file's short name,
+  and gives no filament numbers while it runs. The file is now also looked up under the folder and the name joined
+  together (and through the printer's file information).
+- On the Core One+ the file cannot be read while it is being printed, only afterwards. The grams were read when the print
+  ended and subtracted correctly. The notification at the start of such a print said "nothing will be subtracted", which
+  was misleading: it now says the file is looked at once more when the print ends. If that fails too, you always get a
+  message that says nothing was subtracted and points to "Used in printer".
+- Automatic subtraction is still in beta.
+
 ## 1.0.0 - First stable release
 
 The first release that is no longer a pre-release. Nothing changes in the stored data and nothing needs to be set

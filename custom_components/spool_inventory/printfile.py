@@ -16,6 +16,7 @@ import json
 import re
 import struct
 from typing import Any
+from urllib.parse import quote
 import zlib
 
 from homeassistant.core import HomeAssistant
@@ -124,6 +125,28 @@ def parse_bgcode(data: bytes) -> tuple[dict[str, str], bool]:
                     elif "filament" in k:  # remembered only to explain a failure
                         raw["_other"] = (raw.get("_other", "") + "|" + k)[:200]
         pos = end
+
+
+def file_refs(file: Mapping[str, Any]) -> list[str]:
+    """The addresses to try for a file the printer reports with its job, best guess first.
+
+    For a file on the USB stick the printer reports the *folder* in `path` ("/usb") and the file's short name in
+    `name` ("PLANTH~1.BGC"), so the full address is the two joined. Firmware versions differ, so several
+    spellings are offered; read_estimate tries them one after the other.
+    """
+    path = str(file.get("path") or "")
+    name = str(file.get("name") or "")
+    folder = path.rstrip("/")
+    full = f"{folder}/{name}" if name and folder and not path.endswith(f"/{name}") else path
+    refs = [
+        (file.get("refs") or {}).get("download"),
+        f"/api/v1/files{quote(full, safe='/~')}" if full else None,
+        quote(full, safe="/~") if full else None,
+        f"/api/v1/files{path}" if path else None,
+        path,
+        file.get("display_path"),
+    ]
+    return list(dict.fromkeys(str(r) for r in refs if r))
 
 
 async def read_estimate(

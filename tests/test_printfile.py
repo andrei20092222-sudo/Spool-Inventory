@@ -166,3 +166,28 @@ def test_total_keys_are_accepted_as_a_fallback() -> None:
 
     assert to_estimate({"total filament used [g]": "20.5"})["filament_used_g"] == 20.5
     assert to_estimate({"filament used [g]": "10", "total filament used [g]": "20.5"})["filament_used_g"] == 10
+
+
+def test_file_refs_for_a_file_on_the_usb_stick():
+    """The printer reports the folder in `path` and the short name in `name` (seen on a Core One+, v1.0.0)."""
+    from custom_components.spool_inventory.printfile import file_refs
+
+    job_file = {
+        "refs": {"download": "/usb/PLANTH~1.BGC", "thumbnail": "/thumb/l/usb/PLANTH~1.BGC"},
+        "name": "PLANTH~1.BGC",
+        "display_name": "Plant Hook v1_0.4n_0.2mm_PETG_COREONE_2h59m.bgcode",
+        "path": "/usb",
+        "size": 0,
+    }
+    refs = file_refs(job_file)
+    assert refs[0] == "/usb/PLANTH~1.BGC"  # the address the printer gives comes first
+    assert "/api/v1/files/usb/PLANTH~1.BGC" in refs  # the file information, with the folder and the name joined
+    assert len(refs) == len(set(refs))  # no address twice
+
+
+def test_file_refs_when_path_already_holds_the_file():
+    from custom_components.spool_inventory.printfile import file_refs
+
+    refs = file_refs({"name": "a b.gcode", "path": "/usb/a b.gcode"})
+    assert "/api/v1/files/usb/a%20b.gcode" in refs
+    assert file_refs({}) == []
