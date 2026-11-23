@@ -271,7 +271,12 @@ class PrusaLinkTracker:
         record["reason"] = reason
         if record["tries"] > len(RETRY_DELAYS):
             record["gave_up"] = True
-            self._notify(entry_id, f"“{record['file']}”: {reason}. The file will be looked at once more when the print ends. If that fails too, nothing is subtracted and you can use “Used in printer”.")
+            if record["tries"] >= 99:  # multi-material: the end of the print will not change that, so say it now
+                self._notify(entry_id, f"“{record['file']}”: {reason}. Nothing will be subtracted automatically for this print.")
+            else:
+                # Some printers only give out the file once the print is over. The file is read again at the end
+                # and a notification is only shown if that fails too, so there is no alarm here.
+                _LOGGER.info("%s: %s. Trying again when the print ends.", record["file"], reason)
             return
         self._schedule_retry(entry_id, RETRY_DELAYS[record["tries"] - 1])
 
@@ -327,7 +332,8 @@ class PrusaLinkTracker:
                 except Exception as err:  # noqa: BLE001
                     job["reason"] = f"could not read the file ({err})"
             if job.get("grams") is None:
-                self._notify(entry_id, f"“{job['file']}”: {job.get('reason') or 'no filament information'}. Nothing was subtracted for this print. Use “Used in printer” to subtract it by hand.")
+                if not (job.get("gave_up") and job.get("tries", 0) >= 99):  # multi-material was already announced
+                    self._notify(entry_id, f"“{job['file']}”: {job.get('reason') or 'no filament information'}. Nothing was subtracted for this print. Use “Used in printer” to subtract it by hand.")
                 return
             progress = float(job.get("progress") or 0)
             full = state == "finished" or (state in ("idle", "ready") and progress >= 99)

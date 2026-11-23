@@ -243,10 +243,12 @@ async def test_gives_up_after_the_last_try_and_says_so(hass: HomeAssistant) -> N
             assert not hass.data.get("persistent_notification")
             async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=130))
             await hass.async_block_till_done()
-        msgs = [n["message"] for n in hass.data["persistent_notification"].values()]
-        assert any("could not read the file" in t for t in msgs), f"Expected file read error notification not found. Actual messages: {msgs}"
+        # no alarm while the print runs: the file is tried once more when it ends
+        assert not hass.data.get("persistent_notification")
         hass.states.async_set(st, "finished")
         await hass.async_block_till_done()
+        msgs = [n["message"] for n in hass.data["persistent_notification"].values()]
+        assert any("could not read the file" in t and "Used in printer" in t for t in msgs), f"Expected file read error notification not found. Actual messages: {msgs}"
         assert m.get(a).remaining_weight == 500
     finally:
         patcher.stop()

@@ -4,6 +4,12 @@ All notable changes to Spool Inventory, newest first. The version number is the 
 Updating never needs anything beyond copying the folder over and restarting Home Assistant
 (plus Ctrl+F5 in the browser for panel changes).
 
+## 1.0.2 - No alarm at the start of a USB print
+
+- When the printer does not give out the file while it prints (seen with prints started from the USB stick), there is
+  no longer a notification at the start of the print. The file is read again when the print ends, and a notification is
+  only shown if that fails too. Multi-material prints are still announced at the start.
+
 ## 1.0.1 - Prints started from the USB stick
 
 - A print started from a file on the printer's USB stick reports only the folder (`/usb`) and the file's short name,

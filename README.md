@@ -67,8 +67,8 @@ Only the optional automatic subtraction needs one, and it has some limits for no
   the Home Assistant PrusaLink integration, so they are not supported. OctoPrint may come later, if it turns out
   to be possible.
 - **Prints started from the USB stick:** on my Core One+ the printer does not give out the file (or its filament numbers)
-  while it is printing it. The grams are then read when the print ends (or is cancelled), so nothing shows during
-  the print, and you get a notification at the start saying so. It was subtracted correctly at the end in my test.
+  while it is printing it. The grams are then read when the print ends (or is cancelled). That worked correctly in my
+  tests, and you only get a notification if reading the file fails at the end too.
 - **It is an estimate:** the number comes from the slicer, so weigh the spool now and then.
 
 ## Installation
