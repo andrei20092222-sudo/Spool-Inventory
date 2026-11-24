@@ -43,9 +43,13 @@ becomes a device with a sensor (grams left) for automations and dashboards.
 |---|---|
 | ![Printer](docs/images/printer.png) | ![History](docs/images/history.png) |
 
-| Locations | Phone |
+| Locations | Price calculator |
 |---|---|
-| ![Locations](docs/images/locations.png) | ![Phone](docs/images/phone_cards.png) |
+| ![Locations](docs/images/locations.png) | ![Price calculator](docs/images/price.png) |
+
+| Phone: spools | Phone: price calculator |
+|---|---|
+| ![Phone](docs/images/phone_cards.png) | ![Phone price](docs/images/phone_price.png) |
 
 ## Requirements
 

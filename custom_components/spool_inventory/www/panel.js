@@ -1104,6 +1104,7 @@ class SpoolInventoryPanel extends HTMLElement {
 
     const result = h("div", { class: "panel", id: "price-result", "data-price-result": "", style: { padding: "12px 16px" } });
     this._priceBox = result;
+    this._drawResult(result);
 
     const form = h("div", { class: "panel", style: { padding: "12px 16px", display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: "12px", alignContent: "start" } },
       h("div", { class: "two" }, text("customer", "Customer", "optional"), text("description", "What is it?", "e.g. Moss pole")),
@@ -1151,6 +1152,14 @@ class SpoolInventoryPanel extends HTMLElement {
       try { r = await this._hass.callWS({ type: `${WS}/price_calc`, ...this._quoteJob() }); } catch { return; }
       if (!box.isConnected) return;
       this._lastResult = r;
+      this._drawResult(box);
+    }, 120);
+  }
+
+  /** Fills the cost box from the last calculation (also right after the view is rebuilt, so it never flashes empty). */
+  _drawResult(box) {
+      const r = this._lastResult;
+      if (!r || !box) return;
       const cur = (this.s.settings && this.s.settings.currency) || "";
       const line = (label, v, key) => h("div", { class: "row2", style: { justifyContent: "space-between", padding: "3px 0" } }, h("span", {}, label), h("span", { "data-r": key }, `${fmtNum(v)} ${cur}`));
       box.replaceChildren(...[
@@ -1168,7 +1177,6 @@ class SpoolInventoryPanel extends HTMLElement {
           h("button", { "data-use-suggested": "", onClick: () => { this.s.quote.quoted = String(Math.ceil(r.suggested)); this._main(); this._priceCalc(); } }, "Ask the suggested price"),
           r.profit !== null ? h("span", { class: `chip ${r.profit < 0 ? "err" : "info"}`, "data-profit": "" }, `${r.profit < 0 ? "loss" : "profit"} ${fmtNum(Math.abs(r.profit))} ${cur}`) : null,
           r.quoted ? h("span", { class: "chip", "data-total": "" }, `total with shipping ${fmtNum(r.total)} ${cur}`) : null)].filter(Boolean));
-    }, 120);
   }
 
   async saveQuote() {
