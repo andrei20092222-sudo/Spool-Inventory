@@ -30,6 +30,7 @@ becomes a device with a sensor (grams left) for automations and dashboards.
 - **Low and empty alerts**: notifications and events for automations.
 - **Printer tab**: printers, maintenance tasks with intervals and overdue alerts, parts and consumables
   (nozzles, sheets, IPA, wipes...) with low-stock warnings and a shared shopping list.
+- **Price tab**: work out what a print costs (filament from your own spools' real price per gram, electricity, machine wear, your time, extras, failed prints) and what to ask for it. Save quotes per customer.
 - **History** of every change, with "Set back to" for wrong entries; **undo** after deleting.
 - **Backups**: download or restore JSON, CSV export, automatic daily and pre-upgrade copies.
 - Works on phones (cards layout) and in dark mode. Visible to every HA user; only admins can change data.
@@ -105,6 +106,8 @@ the **Filament** sidebar entry appears. Updating keeps your data.
   It is the slicer's estimate, so it is shown as "auto" in the history, can be undone with "Set back to", and weighing
   the spool always corrects it. Exactly one spool must be marked as loaded. Off by default.
 - **Unload clears the loaded spool (optional)**: when the printer reports no filament, no spool is marked as loaded any more, so you choose the spool each time you load one. Off by default.
+- **Sections**: *Filament*, *Printer* and *Price* are buttons in the blue bar. *Filament* keeps the Spools, By color, By location, Archive and History tabs.
+- **Price tab**: pick a machine (price, service costs, working life and power use are set once under *Machines…*), pick the spool or spools used (the price per kg comes from the spool; you can overwrite it), type the weight, printing time (`8:31` or `8.5`), preparation and post-processing minutes and any extras. You get the cost, a suggested price (cost plus a markup, a smaller one above a limit that you set) and a fixed-markup price. Type the price you ask to see your profit, save the quote and open it again later. Rates (electricity, your hourly time, failure allowance, markups) are under *Rates*. They start at zero, so set them first. Everything stays in your own data; nothing is sent anywhere.
 - **Weigh session** (toolbar): walks through never-weighed spools, all spools, or one location.
 - **Used in printer** (toolbar): subtracts grams from the spool marked as loaded.
 - **Settings**: low threshold (default 150 g), notifications, currency (default RON), storage locations (locations can be added or deleted), your own catalog, recently deleted spools, backup and restore.

@@ -49,6 +49,7 @@ def _payload(manager: SpoolManager) -> dict[str, Any]:
         "summary": manager.summary(),
         "trash": manager.trash_summary(),
         "equipment": manager.equipment.payload(),
+        "pricing": manager.pricing.payload(),
         "settings": manager.settings,
         "user_catalog": manager.user_catalog,
         "prusalink_found": bool(manager.hass.config_entries.async_entries("prusalink")),
@@ -65,7 +66,7 @@ def async_register_websocket_api(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, ws_consume)
     websocket_api.async_register_command(hass, ws_delete)
     websocket_api.async_register_command(hass, ws_history)
-    for command in _EQUIPMENT_COMMANDS:
+    for command in (*_EQUIPMENT_COMMANDS, *_PRICING_COMMANDS):
         websocket_api.async_register_command(hass, command)
     websocket_api.async_register_command(hass, ws_archive)
     websocket_api.async_register_command(hass, ws_restore)
@@ -340,4 +341,58 @@ _EQUIPMENT_COMMANDS = [
     _equipment_command("item_update", {vol.Required("item_id"): cv.string, **_ITEM_FIELDS}, lambda e, m: e.item_update(m["item_id"], m)),
     _equipment_command("item_adjust", {vol.Required("item_id"): cv.string, vol.Required("delta"): vol.Coerce(float)}, lambda e, m: e.item_adjust(m["item_id"], m["delta"])),
     _equipment_command("item_delete", {vol.Required("item_id"): cv.string}, lambda e, m: e.item_delete(m["item_id"])),
+]
+
+
+# ---- price calculator (v1.1.0) -------------------------------------------------
+
+_MONEY = vol.All(vol.Coerce(float), vol.Range(min=0, max=1_000_000))
+_FILAMENT = vol.Schema(
+    {
+        vol.Optional("spool_id", default=""): vol.All(cv.string, vol.Length(max=40)),
+        vol.Optional("name", default=""): vol.All(cv.string, vol.Length(max=120)),
+        vol.Required("grams"): vol.All(vol.Coerce(float), vol.Range(min=0, max=100000)),
+        vol.Required("price_per_kg"): _MONEY,
+    }
+)
+_JOB = {
+    vol.Optional("machine_id", default=""): vol.All(cv.string, vol.Length(max=40)),
+    vol.Optional("filaments", default=list): vol.All([_FILAMENT], vol.Length(max=4)),
+    vol.Optional("hours", default=0): vol.All(vol.Coerce(float), vol.Range(min=0, max=10000)),
+    **{vol.Optional(k, default=0): _MONEY for k in ("prep_min", "post_min", "consumables", "extra", "design", "quoted", "shipping")},
+}
+_MACHINE = {
+    vol.Optional("name"): vol.All(cv.string, vol.Length(min=1, max=60)),
+    vol.Optional("price"): _MONEY,
+    vol.Optional("service"): _MONEY,
+    vol.Optional("life_hours"): vol.All(vol.Coerce(float), vol.Range(min=0, max=1_000_000)),
+    vol.Optional("kwh_per_h"): vol.All(vol.Coerce(float), vol.Range(min=0, max=100)),
+}
+
+
+def _pricing_command(name: str, schema: dict, handler, admin: bool = True):
+    """Build a calculator command; changes need an admin, a plain calculation does not."""
+
+    @websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/{name}", **schema})
+    @websocket_api.async_response
+    async def command(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+        connection.send_result(msg["id"], handler(_manager(hass).pricing, msg))
+
+    command.__name__ = f"ws_{name}"
+    return websocket_api.require_admin(command) if admin else command
+
+
+_PRICING_COMMANDS = [
+    _pricing_command("price_calc", _JOB, lambda p, m: p.calculate(m), admin=False),
+    _pricing_command("pricing_settings", {vol.Optional(k): _MONEY for k in ("energy_cost", "labor_rate", "failure_pct", "markup_pct", "markup_small_pct", "markup_large_pct", "large_threshold")},
+                     lambda p, m: p.update_settings(m)),
+    _pricing_command("machine_add", {vol.Required("name"): vol.All(cv.string, vol.Length(min=1, max=60)), **{k: v for k, v in _MACHINE.items() if k.schema != "name"}},
+                     lambda p, m: p.machine_add(m)),
+    _pricing_command("machine_update", {vol.Required("machine_id"): cv.string, **_MACHINE}, lambda p, m: p.machine_update(m["machine_id"], m)),
+    _pricing_command("machine_delete", {vol.Required("machine_id"): cv.string}, lambda p, m: p.machine_delete(m["machine_id"])),
+    _pricing_command("quote_save", {vol.Optional("quote_id"): cv.string, vol.Optional("customer", default=""): vol.All(cv.string, vol.Length(max=80)),
+                                    vol.Optional("description", default=""): vol.All(cv.string, vol.Length(max=200)),
+                                    vol.Optional("status", default="draft"): vol.In(["draft", "sent", "paid"]), **_JOB},
+                     lambda p, m: p.quote_save({k: v for k, v in m.items() if k not in ("id", "type", "quote_id")}, m.get("quote_id"))),
+    _pricing_command("quote_delete", {vol.Required("quote_id"): cv.string}, lambda p, m: p.quote_delete(m["quote_id"])),
 ]

@@ -40,6 +40,7 @@ from .const import (
     signal_spool_updated,
 )
 from .equipment import Equipment  # noqa: E402
+from .pricing import Pricing  # noqa: E402
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -172,6 +173,7 @@ class SpoolManager:
         self._trash: list[dict[str, Any]] = []  # deleted spools that can be restored
         self._history: list[dict[str, Any]] = []  # what happened to the spools, oldest first
         self.equipment = Equipment(self)  # printers, maintenance tasks, parts and consumables
+        self.pricing = Pricing(self)  # price calculator: rates, machines, quotes
         self._spools: dict[str, Spool] = {}
         self._settings: dict[str, Any] = {
             **DEFAULT_SETTINGS,
@@ -214,6 +216,7 @@ class SpoolManager:
         if isinstance(done, list):
             self.auto_done = [str(d) for d in done][-100:]
         self.equipment.load(data.get("equipment") if isinstance(data.get("equipment"), dict) else {})
+        self.pricing.load(data.get("pricing") if isinstance(data.get("pricing"), dict) else {})
         history = data.get("history")
         if isinstance(history, list):
             self._history = [e for e in history if isinstance(e, dict) and e.get("id")][-HISTORY_MAX:]
@@ -246,6 +249,7 @@ class SpoolManager:
             "trash": self._trash,
             "history": self._history,
             "equipment": self.equipment.as_data(),
+            "pricing": self.pricing.as_data(),
             "auto_jobs": self.auto_jobs,
             "auto_done": self.auto_done,
         }
@@ -640,6 +644,7 @@ class SpoolManager:
             "catalog": deepcopy(self._user_catalog),
             "history": deepcopy(self._history),
             "equipment": deepcopy(self.equipment.as_data()),
+            "pricing": deepcopy(self.pricing.as_data()),
         }
 
     @staticmethod
@@ -706,6 +711,7 @@ class SpoolManager:
             self._spools = dict(parsed)
             self._history = history[-HISTORY_MAX:]
             self.equipment.replace(data.get("equipment") or {})
+            self.pricing.replace(data.get("pricing") or {})
             self._user_catalog = catalog[:MAX_USER_CATALOG]
             stored = data.get("settings")
             if isinstance(stored, dict):
@@ -720,6 +726,7 @@ class SpoolManager:
             fresh = {sid: s for sid, s in parsed.items() if sid not in self._spools}
             self._spools.update(fresh)
             self.equipment.merge(data.get("equipment") or {})
+            self.pricing.merge(data.get("pricing") or {})
             seen = {(e["t"], e["id"], e["action"]) for e in self._history}
             self._history = sorted(
                 [*self._history, *(e for e in history if (e["t"], e["id"], e["action"]) not in seen)],

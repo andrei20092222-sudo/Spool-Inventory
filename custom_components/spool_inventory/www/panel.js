@@ -48,9 +48,15 @@ const STYLE = `
 :host { display:block; min-height:100%; background:var(--primary-background-color); color:var(--primary-text-color);
   font-family:var(--paper-font-body1_-_font-family, Roboto, sans-serif); font-size:14px; }
 * { box-sizing:border-box; }
-.bar { position:sticky; top:0; z-index:5; display:flex; align-items:center; gap:8px; padding:0 16px; height:56px;
+[hidden] { display:none !important; }
+.bar { position:sticky; top:0; z-index:5; display:flex; align-items:center; gap:8px; padding:0 16px; min-height:56px;
   background:var(--app-header-background-color, var(--primary-color)); color:var(--app-header-text-color, #fff); }
-.bar h1 { font-size:20px; font-weight:400; margin:0; flex:1; }
+.bar h1 { font-size:20px; font-weight:400; margin:0; }
+.bar .nav { display:flex; gap:6px; flex:1; margin-left:12px; }
+.bar .nav button { background:none; border:1px solid transparent; color:inherit; border-radius:20px; padding:7px 16px; font-size:15px; }
+.bar .nav button:hover { background:rgba(255,255,255,.14); border-color:transparent; }
+.bar .nav button.on { background:rgba(255,255,255,.26); border-color:rgba(255,255,255,.55); }
+@media (max-width:700px) { .bar { flex-wrap:wrap; height:auto; padding:6px 12px; row-gap:4px; } .bar h1 { flex:1; font-size:18px; } .bar .nav { order:5; flex-basis:100%; margin:0 0 4px; } .bar .nav button { flex:1; justify-content:center; } }
 .wrap { max-width:1200px; margin:0 auto; padding:16px; }
 button { font:inherit; color:inherit; cursor:pointer; border:1px solid var(--divider-color); background:var(--card-background-color);
   border-radius:8px; padding:7px 12px; display:inline-flex; align-items:center; gap:6px; }
@@ -146,6 +152,8 @@ tfoot td { font-weight:600; background:var(--secondary-background-color); }
 .two { display:grid; grid-template-columns:1fr 1fr; gap:12px; } .row2 { display:flex; gap:8px; align-items:center; }
 .row2 > :first-child { flex:1; }
 .swatches { display:flex; flex-wrap:wrap; gap:6px; } .swatches button { padding:0; width:26px; height:26px; border-radius:50%; }
+.fil { display:grid; grid-template-columns:2fr 1fr 1fr auto; gap:12px; align-items:end; } .fil > * { min-width:0; } .two > * { min-width:0; }
+@media (max-width:600px) { .fil { grid-template-columns:1fr 1fr auto; } .fil > :first-child { grid-column:1 / -1; } }
 .hint { font-size:12px; color:var(--secondary-text-color); }
 details { border:1px solid var(--divider-color); border-radius:8px; padding:8px 12px; } summary { cursor:pointer; color:var(--secondary-text-color); }
 details[open] summary { margin-bottom:10px; } details .grid { display:grid; gap:12px; }
@@ -194,6 +202,7 @@ class SpoolInventoryPanel extends HTMLElement {
       spools: [], summary: null, catalog: null, loaded: false,
       tab: "spools", view: null, q: "", fVendor: "", fMaterial: "", fLocation: "", fStatus: "", hideEmpty: false,
       settings: null, userCatalog: [], baseCatalog: null, all: [], archived: [], trash: [], equipment: { printers: [], tasks: [], items: [] },
+      pricing: { settings: {}, machines: [], quotes: [] }, quote: null,
       sortKey: "name", sortDir: 1,
     };
     this._started = false;
@@ -240,6 +249,7 @@ class SpoolInventoryPanel extends HTMLElement {
       this.s.all = msg.spools; this.s.spools = msg.spools.filter((p) => !p.archived); this.s.archived = msg.spools.filter((p) => p.archived);
       this.s.trash = msg.trash || []; this.s.equipment = msg.equipment || { printers: [], tasks: [], items: [] }; this.s.summary = msg.summary; this.s.loaded = true;
       this.s.settings = msg.settings || null;
+      this.s.pricing = msg.pricing || { settings: {}, machines: [], quotes: [] };
       this.s.prusalink = !!msg.prusalink_found;
       if (JSON.stringify(msg.user_catalog || []) !== JSON.stringify(this.s.userCatalog)) { this.s.userCatalog = msg.user_catalog || []; this._mergeCatalog(); }
       this._stats(); this._main(); this._syncToolbar();
@@ -368,12 +378,13 @@ class SpoolInventoryPanel extends HTMLElement {
     const head = this.shadowRoot.getElementById("head");
     this._menu = document.createElement("ha-menu-button");
     this._menu.hass = this._hass; this._menu.narrow = this._narrow;
-    head.replaceChildren(h("div", { class: "bar" }, this._menu, h("h1", {}, "Filament inventory"),
+    head.replaceChildren(h("div", { class: "bar" }, this._menu, h("h1", {}, "Spool Inventory"), h("nav", { class: "nav", id: "nav", "aria-label": "Sections" }),
       this.admin && h("button", { class: "primary", title: "Alerts, locations and my catalog", onClick: () => this.settingsDialog() }, icon("cog"), "Settings"),
-      this.admin && h("button", { class: "primary", onClick: () => this.spoolDialog(null) }, icon("plus"), "Add spool")));
+      this._addBtn = this.admin ? h("button", { class: "primary", "data-add-spool": "", onClick: () => this.spoolDialog(null) }, icon("plus"), "Add spool") : null));
   }
 
   _stats() {
+    if (this._section() !== "filament") { this.shadowRoot.getElementById("stats")?.replaceChildren(); return; }
     const spools = this.s.spools;
     const total = spools.reduce((a, p) => a + p.remaining_weight, 0);
     const low = spools.filter((p) => p.remaining_weight > 0 && p.remaining_weight < this.low).length;
@@ -418,7 +429,14 @@ class SpoolInventoryPanel extends HTMLElement {
     const tab = (id, label) => h("button", { class: s.tab === id ? "on" : "", onClick: () => { s.tab = id; this._toolbar(); this._main(); } }, label);
     const sel = (key, label, opts) => h("select", { "aria-label": label, onChange: (e) => { s[key] = e.target.value; this._main(); } },
       h("option", { value: "" }, label), opts.map((o) => h("option", { value: o, selected: s[key] === o }, o)));
-    const nodes = [h("div", { class: "tabs" }, tab("spools", "Spools"), tab("colors", "By color"), tab("locations", "By location"), tab("archive", this.s.archived.length ? `Archive (${this.s.archived.length})` : "Archive"), tab("printer", this._eqBadge()), tab("history", "History"))];
+    const section = this._section();
+    const navBtn = (id, label, target) => h("button", { class: section === id ? "on" : "", "data-section": id, "aria-current": section === id ? "page" : null,
+      onClick: () => { s.tab = target; this._toolbar(); this._main(); } }, label);
+    this.shadowRoot.getElementById("nav").replaceChildren(navBtn("filament", "Filament", s.sub || "spools"), navBtn("printer", this._eqBadge(), "printer"), navBtn("price", "Price", "price"));
+    if (this._addBtn) this._addBtn.hidden = section !== "filament";
+    if (section !== "filament") { this.shadowRoot.getElementById("toolbar").replaceChildren(); this._filterBar(); this._stats(); return; }
+    s.sub = s.tab;
+    const nodes = [h("div", { class: "tabs" }, tab("spools", "Spools"), tab("colors", "By color"), tab("locations", "By location"), tab("archive", this.s.archived.length ? `Archive (${this.s.archived.length})` : "Archive"), tab("history", "History"))];
     if (s.tab === "spools") {
       nodes.push(
         h("input", { type: "search", placeholder: "Search…", value: s.q, "aria-label": "Search",
@@ -436,7 +454,11 @@ class SpoolInventoryPanel extends HTMLElement {
     }
     this.shadowRoot.getElementById("toolbar").replaceChildren(...nodes.filter(Boolean));
     this._filterBar();
+    this._stats();
   }
+
+  /** Which of the three top-level sections the open tab belongs to. */
+  _section() { return this.s.tab === "printer" ? "printer" : this.s.tab === "price" ? "price" : "filament"; }
 
   _locOptions() { return [...this.locations(), ...(this.s.spools.some((p) => !p.location) ? [NO_LOCATION] : [])]; }
 
@@ -470,7 +492,7 @@ class SpoolInventoryPanel extends HTMLElement {
     const ae = this.shadowRoot.activeElement;
     if (ae && ae.closest?.("#main") && ae.tagName === "INPUT") { this._pending = true; ae.addEventListener("blur", () => { if (this._pending) { this._pending = false; this._main(); } }, { once: true }); return; }
     if (!this.s.loaded) return main.replaceChildren(h("div", { class: "none" }, "Loading…"));
-    main.replaceChildren(this.s.tab === "colors" ? this._colorsTable() : this.s.tab === "locations" ? this._locationsView() : this.s.tab === "archive" ? this._archiveView() : this.s.tab === "printer" ? this._printerView() : this.s.tab === "history" ? this._historyView()
+    main.replaceChildren(this.s.tab === "colors" ? this._colorsTable() : this.s.tab === "locations" ? this._locationsView() : this.s.tab === "archive" ? this._archiveView() : this.s.tab === "printer" ? this._printerView() : this.s.tab === "price" ? this._priceView() : this.s.tab === "history" ? this._historyView()
       : this.view === "cards" ? this._cards() : this._table());
   }
 
@@ -523,7 +545,7 @@ class SpoolInventoryPanel extends HTMLElement {
     const LABEL = { added: "Added", edited: "Edited", weighed: "Weighed", used: "Used filament", deleted: "Deleted", restored: "Restored",
       archived: "Moved to archive", unarchived: "Back from archive", "bought another": "Bought another",
       "maintenance done": "Maintenance done", "task added": "Task added", "item added": "Item added", "item changed": "Item changed", "item deleted": "Item deleted",
-      unloaded: "Unloaded from printer", "printer added": "Printer added", "printer deleted": "Printer deleted" };
+      unloaded: "Unloaded from printer", "printer added": "Printer added", quote_saved: "Quote saved", "printer deleted": "Printer deleted" };
     const when = (iso) => { const d = new Date(iso); return isNaN(d) ? iso : d.toLocaleString([], { dateStyle: "medium", timeStyle: "short" }); };
     return rows.map((e) => {
       const spool = this.s.all.find((p) => p.id === e.id);
@@ -1025,6 +1047,207 @@ class SpoolInventoryPanel extends HTMLElement {
   }
 
   /* ---------- dialogs ---------- */
+  /* ---------- price tab: what a print costs and what to ask for it ---------- */
+
+  _newQuote() {
+    const first = this.s.pricing.machines[0];
+    return { quote_id: null, customer: "", description: "", status: "draft", machine_id: first ? first.id : "",
+      filaments: [{ spool_id: "", name: "", grams: "", price_per_kg: "" }],
+      hours: "", prep_min: "", post_min: "", consumables: "", extra: "", design: "", quoted: "", shipping: "" };
+  }
+
+  /** "8:31" or "8.5" -> hours as a number. */
+  _hours(text) {
+    const m = /^\s*(\d+):(\d{1,2})\s*$/.exec(String(text));
+    return m ? parseInt(m[1], 10) + parseInt(m[2], 10) / 60 : num(text) || 0;
+  }
+
+  _quoteJob() {
+    const q = this.s.quote;
+    return { machine_id: q.machine_id || "", hours: this._hours(q.hours),
+      filaments: q.filaments.map((f) => ({ spool_id: f.spool_id || "", name: f.name || "", grams: num(f.grams) || 0, price_per_kg: num(f.price_per_kg) || 0 })),
+      ...Object.fromEntries(["prep_min", "post_min", "consumables", "extra", "design", "quoted", "shipping"].map((k) => [k, num(q[k]) || 0])) };
+  }
+
+
+  _priceView() {
+    const q = this.s.quote || (this.s.quote = this._newQuote());
+    const adm = this.admin;
+    const P = this.s.pricing;
+    const cur = (this.s.settings && this.s.settings.currency) || "";
+    const bind = (key, props = {}) => h("input", { type: "text", inputmode: "decimal", value: q[key], "data-q": key, ...props,
+      onInput: (e) => { q[key] = e.target.value; this._priceCalc(); } });
+    const text = (key, label, ph) => this.field(label, h("input", { type: "text", maxlength: key === "customer" ? "80" : "200", value: q[key], placeholder: ph || "", "data-q": key,
+      onInput: (e) => { q[key] = e.target.value; } }));
+    const num2 = (key, label, unit, ph) => this.field(`${label}${unit ? ` (${unit})` : ""}`, bind(key, { placeholder: ph || "0" }));
+
+    const machine = h("select", { "data-q": "machine_id", "aria-label": "Machine", onChange: (e) => { q.machine_id = e.target.value; this._priceCalc(); } },
+      h("option", { value: "" }, P.machines.length ? "No machine (skip electricity and wear)" : "No machine yet"),
+      P.machines.map((m) => h("option", { value: m.id, selected: m.id === q.machine_id }, m.name)));
+
+    const spools = this.s.spools.filter((p) => p.price);
+    const perKg = (p) => (p.initial_weight > 0 ? (p.price / p.initial_weight) * 1000 : 0);
+    const filRows = q.filaments.map((f, i) => {
+      const sel = h("select", { "data-fil-spool": i, "aria-label": `Filament ${i + 1}`, onChange: (e) => {
+        const p = this.s.spools.find((x) => x.id === e.target.value);
+        f.spool_id = p ? p.id : ""; f.name = p ? p.name : ""; if (p && p.price) f.price_per_kg = String(Math.round(perKg(p) * 100) / 100);
+        this._main(); this._priceCalc(); } },
+        h("option", { value: "" }, "Other (type the price)"),
+        [...this.s.spools].sort((a, b) => a.name.localeCompare(b.name)).map((p) => h("option", { value: p.id, selected: p.id === f.spool_id },
+          `${p.name}${p.price ? ` · ${fmtNum(perKg(p))}/kg` : ""}`)));
+      return h("div", { class: "fil", "data-fil": i },
+        this.field(`Filament ${i + 1}`, sel),
+        this.field("Weight (g)", h("input", { type: "text", inputmode: "decimal", value: f.grams, "data-fil-grams": i, onInput: (e) => { f.grams = e.target.value; this._priceCalc(); } })),
+        this.field(`Price per kg (${cur})`, h("input", { type: "text", inputmode: "decimal", value: f.price_per_kg, "data-fil-price": i, onInput: (e) => { f.price_per_kg = e.target.value; this._priceCalc(); } })),
+        q.filaments.length > 1 ? h("button", { class: "bare danger", title: "Remove this filament", "aria-label": `Remove filament ${i + 1}`, onClick: () => { q.filaments.splice(i, 1); this._main(); this._priceCalc(); } }, icon("delete-outline")) : h("span"));
+    });
+
+    const result = h("div", { class: "panel", id: "price-result", "data-price-result": "", style: { padding: "12px 16px" } });
+    this._priceBox = result;
+
+    const form = h("div", { class: "panel", style: { padding: "12px 16px", display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: "12px", alignContent: "start" } },
+      h("div", { class: "two" }, text("customer", "Customer", "optional"), text("description", "What is it?", "e.g. Moss pole")),
+      this.field("Machine", h("div", { class: "row2", style: { flexWrap: "wrap" } }, machine, adm ? h("button", { "data-machines": "", onClick: () => this.machinesDialog() }, "Machines…") : null)),
+      filRows,
+      q.filaments.length < 4 ? h("div", {}, h("button", { "data-add-fil": "", onClick: () => { q.filaments.push({ spool_id: "", name: "", grams: "", price_per_kg: "" }); this._main(); } }, icon("plus"), "Add filament")) : null,
+      h("div", { class: "two" }, num2("hours", "Printing time", "h or hh:mm", "e.g. 8:31"), num2("design", "Design (external)", cur)),
+      h("div", { class: "two" }, num2("prep_min", "Preparation", "min"), num2("post_min", "Post-processing", "min")),
+      h("div", { class: "two" }, num2("consumables", "Consumables", cur), num2("extra", "Extra costs", cur)),
+      h("div", { class: "hint" }, "Preparation is fixing the model, slicing, starting the print. Post-processing is removing the job and supports."));
+
+    const ask = h("div", { class: "panel", style: { padding: "12px 16px", display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: "12px" } },
+      h("div", { class: "two" }, num2("quoted", "Price you ask", cur), num2("shipping", "Shipping", cur)),
+      h("div", { class: "two" },
+        this.field("Status", h("select", { "data-q": "status", onChange: (e) => { q.status = e.target.value; } },
+          [["draft", "Draft"], ["sent", "Sent to customer"], ["paid", "Paid"]].map(([v, l]) => h("option", { value: v, selected: v === q.status }, l)))),
+        h("span")),
+      adm ? h("div", { class: "row2", style: { flexWrap: "wrap" } },
+        h("button", { class: "primary", "data-save-quote": "", onClick: () => this.saveQuote() }, q.quote_id ? "Save changes" : "Save quote"),
+        h("button", { "data-new-quote": "", onClick: () => { this.s.quote = this._newQuote(); this._main(); this._priceCalc(); } }, "New quote"),
+        h("span", { class: "grow" }),
+        h("button", { "data-rates": "", onClick: () => this.ratesDialog() }, icon("cog"), "Rates")) : null);
+
+    const saved = P.quotes.length ? P.quotes.map((x) => h("div", { class: "hrow", "data-quote": x.id },
+      h("div", {}, h("b", {}, x.customer || x.description || "Quote"), " ", h("span", { class: `chip ${x.status === "paid" ? "info" : x.status === "sent" ? "warn" : ""}` }, x.status),
+        h("small", { class: "wd" }, [x.customer && x.description, `cost ${fmtNum(x.result.with_failures)} ${cur}`, x.quoted ? `asked ${fmtNum(x.quoted)} ${cur}` : "", ago(x.updated || x.created)].filter(Boolean).join(" · "))),
+      h("div", { class: "actions" },
+        h("button", { "data-open-quote": x.id, onClick: () => this.openQuote(x) }, "Open"),
+        adm ? h("button", { class: "bare danger", title: "Delete", "aria-label": "Delete quote", "data-delete-quote": x.id, onClick: () => this.deleteQuote(x) }, icon("delete-outline")) : null)))
+      : h("div", { class: "none" }, "No saved quotes yet.");
+
+    setTimeout(() => this._priceCalc(), 0);
+    return h("div", {},
+      h("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(320px, 100%), 1fr))", gap: "12px", alignItems: "start" } },
+        form, h("div", { style: { display: "grid", gap: "12px" } }, result, ask)),
+      h("section", { class: "loc", style: { marginTop: "16px" } }, h("h2", {}, "Saved quotes", h("small", {}, `${P.quotes.length}`)), h("div", { class: "panel" }, saved)));
+  }
+
+  _priceCalc() {
+    clearTimeout(this._priceTimer);
+    this._priceTimer = setTimeout(async () => {
+      const box = this._priceBox;
+      if (!box || !box.isConnected) return;
+      let r;
+      try { r = await this._hass.callWS({ type: `${WS}/price_calc`, ...this._quoteJob() }); } catch { return; }
+      if (!box.isConnected) return;
+      this._lastResult = r;
+      const cur = (this.s.settings && this.s.settings.currency) || "";
+      const line = (label, v, key) => h("div", { class: "row2", style: { justifyContent: "space-between", padding: "3px 0" } }, h("span", {}, label), h("span", { "data-r": key }, `${fmtNum(v)} ${cur}`));
+      box.replaceChildren(...[
+        h("h2", { style: { margin: "0 0 6px", fontSize: "16px", fontWeight: "500" } }, "Cost"),
+        line("Filament", r.filament, "filament"), line("Electricity", r.electricity, "electricity"), line("Machine wear", r.depreciation, "depreciation"),
+        line("Preparation", r.preparation, "preparation"), line("Post-processing", r.post_processing, "post_processing"),
+        r.extras ? line("Consumables and extras", r.extras, "extras") : null, r.design ? line("Design", r.design, "design") : null,
+        h("div", { class: "row2", style: { justifyContent: "space-between", padding: "6px 0", borderTop: "1px solid var(--divider-color)", marginTop: "4px" } }, h("b", {}, "Subtotal"), h("b", { "data-r": "subtotal" }, `${fmtNum(r.subtotal)} ${cur}`)),
+        line(`With failure allowance (${this.s.pricing.settings.failure_pct}%)`, r.with_failures, "with_failures"),
+        h("div", { class: "row2", style: { justifyContent: "space-between", padding: "8px 0 2px", borderTop: "1px solid var(--divider-color)", marginTop: "4px" } },
+          h("div", {}, h("b", {}, "Suggested price"), h("small", { class: "wd" }, `cost + ${r.suggested_pct}%`)),
+          h("b", { style: { fontSize: "20px" }, "data-r": "suggested" }, `${fmtNum(r.suggested)} ${cur}`)),
+        line(`Fixed markup (${this.s.pricing.settings.markup_pct}%)`, r.markup_price, "markup_price"),
+        h("div", { class: "row2", style: { flexWrap: "wrap", paddingTop: "6px" } },
+          h("button", { "data-use-suggested": "", onClick: () => { this.s.quote.quoted = String(Math.ceil(r.suggested)); this._main(); this._priceCalc(); } }, "Ask the suggested price"),
+          r.profit !== null ? h("span", { class: `chip ${r.profit < 0 ? "err" : "info"}`, "data-profit": "" }, `${r.profit < 0 ? "loss" : "profit"} ${fmtNum(Math.abs(r.profit))} ${cur}`) : null,
+          r.quoted ? h("span", { class: "chip", "data-total": "" }, `total with shipping ${fmtNum(r.total)} ${cur}`) : null)].filter(Boolean));
+    }, 120);
+  }
+
+  async saveQuote() {
+    const q = this.s.quote;
+    const job = this._quoteJob();
+    try {
+      const saved = await this._call({ type: "quote_save", ...(q.quote_id ? { quote_id: q.quote_id } : {}), customer: q.customer.trim(), description: q.description.trim(), status: q.status, ...job });
+      q.quote_id = saved.id; this._toast("Quote saved");
+    } catch {}
+  }
+
+  openQuote(x) {
+    const s = (v) => (v ? String(v) : "");
+    this.s.quote = { quote_id: x.id, customer: x.customer, description: x.description, status: x.status, machine_id: x.machine_id,
+      filaments: x.filaments.length ? x.filaments.map((f) => ({ spool_id: f.spool_id, name: f.name, grams: s(f.grams), price_per_kg: s(f.price_per_kg) })) : [{ spool_id: "", name: "", grams: "", price_per_kg: "" }],
+      hours: x.hours ? `${Math.floor(Math.round(x.hours * 60) / 60)}:${String(Math.round(x.hours * 60) % 60).padStart(2, "0")}` : "", prep_min: s(x.prep_min), post_min: s(x.post_min), consumables: s(x.consumables), extra: s(x.extra), design: s(x.design), quoted: s(x.quoted), shipping: s(x.shipping) };
+    this._main(); window.scrollTo?.(0, 0);
+  }
+
+  deleteQuote(x) {
+    this._modal("Delete this quote?", [h("p", {}, `${x.customer || x.description || "This quote"} will be removed. This cannot be undone.`)], [
+      { label: "Cancel", run: (c) => c() },
+      { label: "Delete", primary: true, run: async (c) => { try { await this._call({ type: "quote_delete", quote_id: x.id }); if (this.s.quote && this.s.quote.quote_id === x.id) this.s.quote.quote_id = null; c(); this._toast("Quote deleted"); } catch {} } }]);
+  }
+
+  ratesDialog() {
+    const st = this.s.pricing.settings;
+    const cur = (this.s.settings && this.s.settings.currency) || "";
+    const inp = (key) => h("input", { type: "text", inputmode: "decimal", value: String(st[key]), "data-rate": key });
+    const fields = { energy_cost: inp("energy_cost"), labor_rate: inp("labor_rate"), failure_pct: inp("failure_pct"), markup_pct: inp("markup_pct"), markup_small_pct: inp("markup_small_pct"), markup_large_pct: inp("markup_large_pct"), large_threshold: inp("large_threshold") };
+    this._modal("Rates", [
+      h("div", { class: "two" }, this.field(`Electricity (${cur} per kWh)`, fields.energy_cost), this.field(`Your time (${cur} per hour)`, fields.labor_rate)),
+      this.field("Failed prints (% added to the cost)", fields.failure_pct),
+      h("div", { class: "two" }, this.field("Suggested markup (%)", fields.markup_small_pct), this.field("… when the cost is above the limit (%)", fields.markup_large_pct)),
+      h("div", { class: "two" }, this.field(`Limit for the smaller markup (${cur})`, fields.large_threshold), this.field("Fixed markup (%)", fields.markup_pct)),
+      h("p", { class: "hint" }, "Big jobs usually get a smaller percentage. The suggested price uses the first markup up to the limit and the second above it. Everything stays in your own data.")], [
+      { label: "Cancel", run: (c) => c() },
+      { label: "Save", primary: true, run: async (c) => {
+        const body = Object.fromEntries(Object.entries(fields).map(([k, el]) => [k, num(el.value) ?? 0]));
+        try { await this._call({ type: "pricing_settings", ...body }); c(); this._priceCalc(); } catch {} } }]);
+  }
+
+  machinesDialog() {
+    const box = h("div", { class: "hist" });
+    const draw = () => {
+      const ms = this.s.pricing.machines;
+      box.replaceChildren(...(ms.length ? ms.map((m) => h("div", { class: "hrow", "data-machine": m.id },
+        h("div", {}, h("b", {}, m.name), h("small", { class: "wd" }, `wear ${fmtNum(m.depreciation_per_h)} per hour · ${m.kwh_per_h} kWh/h`)),
+        h("div", { class: "actions" },
+          h("button", { class: "bare", title: "Edit", "aria-label": `Edit ${m.name}`, "data-edit-machine": m.id, onClick: () => this.machineDialog(m) }, icon("pencil")),
+          h("button", { class: "bare danger", title: "Delete", "aria-label": `Delete ${m.name}`, "data-delete-machine": m.id, onClick: async () => {
+            try { await this._call({ type: "machine_delete", machine_id: m.id }); if (this.s.quote && this.s.quote.machine_id === m.id) this.s.quote.machine_id = ""; } catch {} } }, icon("delete-outline")))))
+        : [h("div", { class: "none" }, "No machines yet. Add your printer so electricity and wear are part of the cost.")]));
+    };
+    draw();
+    this._onData = () => { draw(); };
+    this._modal("Machines", [box, this.s.pricing.machines.length < 10 ? h("div", {}, h("button", { "data-add-machine": "", onClick: () => this.machineDialog(null) }, icon("plus"), "Add machine")) : null],
+      [{ label: "Close", primary: true, run: (c) => { this._onData = null; c(); this._main(); } }]);
+  }
+
+  machineDialog(m) {
+    const cur = (this.s.settings && this.s.settings.currency) || "";
+    const inp = (v, attr, ph) => h("input", { type: "text", inputmode: "decimal", value: v === undefined ? "" : String(v), placeholder: ph || "", ...attr });
+    const name = h("input", { type: "text", maxlength: "60", value: m ? m.name : "", placeholder: "e.g. Core One+", "data-machine-name": "" });
+    const price = inp(m && m.price, { "data-machine-price": "" }), service = inp(m && m.service, { "data-machine-service": "" });
+    const life = inp(m && m.life_hours, { "data-machine-life": "" }, "e.g. 10000"), kwh = inp(m && m.kwh_per_h, { "data-machine-kwh": "" }, "e.g. 0.24");
+    this._modal(m ? "Edit machine" : "Add machine", [
+      this.field("Name", name),
+      h("div", { class: "two" }, this.field(`Price (${cur})`, price), this.field(`Expected service costs over its life (${cur})`, service)),
+      h("div", { class: "two" }, this.field("Working life (hours)", life), this.field("Power use (kWh per hour)", kwh)),
+      h("p", { class: "hint" }, "Wear per hour = (price + service costs) ÷ working life. Power use is the average while printing, not the maximum.")], [
+      { label: "Cancel", run: (c) => c() },
+      { label: "Save", primary: true, run: async (c) => {
+        if (!name.value.trim()) { this._toast("Give the machine a name", true); return; }
+        const body = { name: name.value.trim(), price: num(price.value) ?? 0, service: num(service.value) ?? 0, life_hours: num(life.value) ?? 0, kwh_per_h: num(kwh.value) ?? 0 };
+        try { const r = await this._call(m ? { type: "machine_update", machine_id: m.id, ...body } : { type: "machine_add", ...body });
+          if (!m && this.s.quote && !this.s.quote.machine_id) this.s.quote.machine_id = r.id; c(); } catch {} } }]);
+  }
+
   _modal(title, body, buttons) {
     const close = () => { overlay.remove(); };
     const overlay = h("div", { class: "overlay", onMousedown: (e) => { if (e.target === overlay) close(); } },

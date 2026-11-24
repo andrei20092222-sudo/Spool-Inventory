@@ -71,6 +71,18 @@
     },
     "equipment_full": {
       "message": "The limit of printers, tasks or items is reached."
+    },
+    "machine_not_found": {
+      "message": "That machine was not found."
+    },
+    "quote_not_found": {
+      "message": "That quote was not found."
+    },
+    "too_many_machines": {
+      "message": "You can keep up to 10 machines in the calculator."
+    },
+    "too_many_quotes": {
+      "message": "You can keep up to 500 saved quotes. Delete some old ones first."
     }
   },
   "services": {

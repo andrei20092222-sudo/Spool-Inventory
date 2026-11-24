@@ -4,6 +4,20 @@ All notable changes to Spool Inventory, newest first. The version number is the 
 Updating never needs anything beyond copying the folder over and restarting Home Assistant
 (plus Ctrl+F5 in the browser for panel changes).
 
+## 1.1.0 - Price calculator
+
+- New **Price** tab: what a print costs and what to ask for it. Filament cost comes from the spools you already have
+  (price and weight of the spool), plus electricity, machine wear, preparation and post-processing time, extras and a
+  failure allowance. It shows a suggested price (a markup that gets smaller above a limit you choose) and a fixed-markup
+  price, and your profit once you type the price you ask.
+- Up to four filaments per quote, up to 10 machines, up to 500 saved quotes (with customer, description and status
+  draft / sent / paid). Open a saved quote to change it.
+- **New layout**: *Filament*, *Printer* and *Price* are now three buttons in the blue bar at the top. Under *Filament* you
+  still have Spools, By color, By location, Archive and History with the same filters. The summary cards only show
+  under *Filament*, and *Add spool* only appears there too.
+- Rates and machines are yours to set; they start empty (zero), so no one's prices are built in.
+- Included in backups, and restored or merged like the rest of the data. Nothing about the stored spools changes.
+
 ## 1.0.2 - No alarm at the start of a USB print
 
 - When the printer does not give out the file while it prints (seen with prints started from the USB stick), there is
