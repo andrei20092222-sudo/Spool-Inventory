@@ -83,6 +83,15 @@
     },
     "too_many_quotes": {
       "message": "You can keep up to 500 saved quotes. Delete some old ones first."
+    },
+    "customer_not_found": {
+      "message": "That customer was not found."
+    },
+    "customer_exists": {
+      "message": "A customer with that name is already in the list."
+    },
+    "too_many_customers": {
+      "message": "You can keep up to 300 customers in the list."
     }
   },
   "services": {

@@ -101,7 +101,7 @@ the **Filament** sidebar entry appears. Updating keeps your data.
   empty-spool weight are filled in) or *Custom*. Choose the starting amount: new full spool, known grams
   left, or scale reading including the spool. **More fields** holds price, location and notes.
 - **Row buttons**: loaded in printer, reorder, bought another (reorder list only), weigh, use filament,
-  and a "..." menu with edit, history, duplicate, archive, delete.
+  and a "..." menu with edit, history, duplicate, archive, delete. The same buttons are in the By location view and under each color in By color.
 - **What fits?** (toolbar): pick a material (and color), type the grams the print needs, and get the spools with enough
   filament left. The lists only show what you own, and colors are grouped into families (all greens together, all greys together).
 - **Automatic subtraction (beta)**: stays in beta for now while I keep testing it on real prints. It needs the official PrusaLink integration already set up in Home Assistant. Switch it
@@ -111,7 +111,7 @@ the **Filament** sidebar entry appears. Updating keeps your data.
   the spool always corrects it. Exactly one spool must be marked as loaded. Off by default.
 - **Unload clears the loaded spool (optional)**: when the printer reports no filament, no spool is marked as loaded any more, so you choose the spool each time you load one. Off by default.
 - **Sections**: *Filament*, *Printer* and *Price* are buttons in the blue bar. *Filament* keeps the Spools, By color, By location, Archive and History tabs.
-- **Price tab**: pick a machine (price, service costs, working life and power use are set once under *Machines…*), pick the spool or spools used (the price per kg comes from the spool; you can overwrite it), type the weight, printing time (`8:31` or `8.5`), preparation and post-processing minutes and any extras. You get the cost, a suggested price (cost plus a markup, a smaller one above a limit that you set) and a fixed-markup price. Type the price you ask to see your profit, save the quote and open it again later. Rates (electricity, your hourly time, failure allowance, markups) are under *Rates*. They start at zero, so set them first. Everything stays in your own data; nothing is sent anywhere.
+- **Price tab**: pick a machine (price, service costs, working life and power use are set once under *Machines…*), pick the spool or spools used (the price per kg comes from the spool; you can overwrite it), type the weight, printing time (`8:31` or `8.5`), preparation and post-processing minutes and any extras. You get the cost, a suggested price (cost plus a markup, a smaller one above a limit that you set) and a fixed-markup price. Type the price you ask to see your profit, save the quote and open it again later. The customer box offers the names from your own customer list (*List…* to add, rename or remove). Rates (electricity, your hourly time, failure allowance, markups) are under *Rates*. They start at zero, so set them first. Everything stays in your own data; nothing is sent anywhere.
 - **Weigh session** (toolbar): walks through never-weighed spools, all spools, or one location.
 - **Used in printer** (toolbar): subtracts grams from the spool marked as loaded.
 - **Settings**: low threshold (default 150 g), notifications, currency (default RON), storage locations (locations can be added or deleted), your own catalog, recently deleted spools, backup and restore.

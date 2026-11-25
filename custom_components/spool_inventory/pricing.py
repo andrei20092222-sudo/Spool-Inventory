@@ -23,6 +23,7 @@ if TYPE_CHECKING:
 MAX_MACHINES = 10
 MAX_QUOTES = 500
 MAX_FILAMENTS = 4
+MAX_CUSTOMERS = 300
 STATUSES = ("draft", "sent", "paid")
 
 DEFAULT_PRICING = {
@@ -116,17 +117,22 @@ class Pricing:
         self.settings: dict[str, float] = dict(DEFAULT_PRICING)
         self.machines: list[dict[str, Any]] = []
         self.quotes: list[dict[str, Any]] = []
+        self.customers: list[str] = []  # names offered in the quote form; free text still works
 
     # ---- persistence ------------------------------------------------------
 
     def as_data(self) -> dict[str, Any]:
-        return {"settings": self.settings, "machines": self.machines, "quotes": self.quotes}
+        return {"settings": self.settings, "machines": self.machines, "quotes": self.quotes, "customers": self.customers}
 
     def load(self, data: dict[str, Any]) -> None:
         stored = data.get("settings")
         self.settings = {k: (_num(stored[k]) if isinstance(stored, dict) and k in stored else v) for k, v in DEFAULT_PRICING.items()}
         self.machines = [m for m in (self._clean_machine(x) for x in _rows(data.get("machines"))) if m][:MAX_MACHINES]
         self.quotes = [q for q in (self._clean_quote(x) for x in _rows(data.get("quotes"))) if q][:MAX_QUOTES]
+        self.customers = []
+        raw = data.get("customers")
+        for name in raw if isinstance(raw, list) else []:
+            self._add_name(_text(name, 80))
 
     def replace(self, data: dict[str, Any]) -> None:
         self.load(data)
@@ -138,6 +144,15 @@ class Pricing:
         for mine, theirs, cap in ((self.machines, other.machines, MAX_MACHINES), (self.quotes, other.quotes, MAX_QUOTES)):
             known = {r["id"] for r in mine}
             mine.extend(r for r in theirs if r["id"] not in known and len(mine) < cap)
+        for name in other.customers:
+            self._add_name(name)
+
+    def _add_name(self, name: str) -> bool:
+        """Put a customer name on the list (case-insensitive, no duplicates). False when nothing was added."""
+        if not name or len(self.customers) >= MAX_CUSTOMERS or any(c.lower() == name.lower() for c in self.customers):
+            return False
+        self.customers.append(name)
+        return True
 
     @staticmethod
     def _clean_machine(raw: dict[str, Any]) -> dict[str, Any] | None:
@@ -179,6 +194,7 @@ class Pricing:
             "settings": dict(self.settings),
             "machines": [{**m, "depreciation_per_h": round(depreciation_per_hour(m), 4)} for m in self.machines],
             "quotes": sorted(self.quotes, key=lambda q: q["updated"] or q["created"], reverse=True),
+            "customers": sorted(self.customers, key=str.lower),
         }
 
     def calculate(self, raw: dict[str, Any]) -> dict[str, Any]:
@@ -247,6 +263,7 @@ class Pricing:
                                    "created": existing["created"] if existing else now, "updated": now})
         if quote is None:
             raise _err("quote_not_found")
+        self._add_name(quote["customer"])  # a new name is remembered for next time
         if existing is None:
             self.quotes.append(quote)
         else:
@@ -262,3 +279,42 @@ class Pricing:
             raise _err("quote_not_found")
         self.quotes = [q for q in self.quotes if q["id"] != quote_id]
         self._changed()
+
+    # ---- customers --------------------------------------------------------
+
+    @callback
+    def customer_add(self, name: str) -> list[str]:
+        name = _text(name, 80)
+        if not name:
+            raise _err("customer_not_found")
+        if len(self.customers) >= MAX_CUSTOMERS and not any(c.lower() == name.lower() for c in self.customers):
+            raise _err("too_many_customers")
+        self._add_name(name)
+        self._changed()
+        return sorted(self.customers, key=str.lower)
+
+    @callback
+    def customer_rename(self, name: str, new_name: str) -> list[str]:
+        """Rename a customer in the list and on their saved quotes."""
+        new_name = _text(new_name, 80)
+        old = next((c for c in self.customers if c.lower() == _text(name, 80).lower()), None)
+        if old is None or not new_name:
+            raise _err("customer_not_found")
+        if new_name.lower() != old.lower() and any(c.lower() == new_name.lower() for c in self.customers):
+            raise _err("customer_exists")
+        self.customers[self.customers.index(old)] = new_name
+        for quote in self.quotes:
+            if quote["customer"].lower() == old.lower():
+                quote["customer"] = new_name
+        self._changed()
+        return sorted(self.customers, key=str.lower)
+
+    @callback
+    def customer_delete(self, name: str) -> list[str]:
+        """Remove a name from the list. Saved quotes keep the name they were made with."""
+        old = next((c for c in self.customers if c.lower() == _text(name, 80).lower()), None)
+        if old is None:
+            raise _err("customer_not_found")
+        self.customers.remove(old)
+        self._changed()
+        return sorted(self.customers, key=str.lower)

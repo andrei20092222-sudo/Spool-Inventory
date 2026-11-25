@@ -395,4 +395,8 @@ _PRICING_COMMANDS = [
                                     vol.Optional("status", default="draft"): vol.In(["draft", "sent", "paid"]), **_JOB},
                      lambda p, m: p.quote_save({k: v for k, v in m.items() if k not in ("id", "type", "quote_id")}, m.get("quote_id"))),
     _pricing_command("quote_delete", {vol.Required("quote_id"): cv.string}, lambda p, m: p.quote_delete(m["quote_id"])),
+    _pricing_command("customer_add", {vol.Required("name"): vol.All(cv.string, vol.Length(min=1, max=80))}, lambda p, m: p.customer_add(m["name"])),
+    _pricing_command("customer_rename", {vol.Required("name"): vol.All(cv.string, vol.Length(min=1, max=80)), vol.Required("new_name"): vol.All(cv.string, vol.Length(min=1, max=80))},
+                     lambda p, m: p.customer_rename(m["name"], m["new_name"])),
+    _pricing_command("customer_delete", {vol.Required("name"): vol.All(cv.string, vol.Length(min=1, max=80))}, lambda p, m: p.customer_delete(m["name"])),
 ]

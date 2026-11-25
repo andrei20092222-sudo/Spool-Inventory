@@ -116,3 +116,51 @@ async def test_non_admin_can_calculate_but_not_save(hass: HomeAssistant, hass_ws
     assert (await client.receive_json())["success"]
     await client.send_json_auto_id({"type": f"{DOMAIN}/quote_save"})
     assert not (await client.receive_json())["success"]
+
+
+async def test_customer_list(hass: HomeAssistant) -> None:
+    m = (await _setup(hass)).runtime_data
+    pr = m.pricing
+    assert pr.customer_add("  Alex ") == ["Alex"]
+    assert pr.customer_add("alex") == ["Alex"]  # same name, different case: not added twice
+    pr.customer_add("Sam")
+    # a quote for a new name puts it on the list, an existing name stays as it is
+    q = pr.quote_save({"customer": "Robin", "description": "Stand"})
+    pr.quote_save({"customer": "alex"})
+    assert pr.payload()["customers"] == ["Alex", "Robin", "Sam"]
+    # renaming also changes the saved quotes; the new name may not clash with another one
+    pr.customer_rename("Robin", "Robin B")
+    assert next(x for x in pr.quotes if x["id"] == q["id"])["customer"] == "Robin B"
+    with pytest.raises(ServiceValidationError):
+        pr.customer_rename("Sam", "alex")
+    with pytest.raises(ServiceValidationError):
+        pr.customer_rename("Nobody", "X")
+    # removing a name keeps what is written on the quotes
+    pr.customer_delete("Robin B")
+    assert "Robin B" not in pr.customers and any(x["customer"] == "Robin B" for x in pr.quotes)
+    with pytest.raises(ServiceValidationError):
+        pr.customer_delete("Robin B")
+    with pytest.raises(ServiceValidationError):
+        pr.customer_add("   ")
+    # backup, restore and merge
+    data = m.export_data()
+    assert data["pricing"]["customers"] == ["Alex", "Sam"]
+    await m.async_import(data, replace=True)
+    assert pr.customers == ["Alex", "Sam"]
+    pr.customer_delete("Sam")
+    await m.async_import(data, replace=False)
+    assert pr.customers == ["Alex", "Sam"]  # merge brings missing names back, no duplicates
+
+
+async def test_customer_websocket(hass: HomeAssistant, hass_ws_client) -> None:
+    await _setup(hass)
+    client = await hass_ws_client(hass)
+    for payload, ok in (
+        ({"type": f"{DOMAIN}/customer_add", "name": "Alex"}, True),
+        ({"type": f"{DOMAIN}/customer_rename", "name": "Alex", "new_name": "Alexandru"}, True),
+        ({"type": f"{DOMAIN}/customer_rename", "name": "Nope", "new_name": "X"}, False),
+        ({"type": f"{DOMAIN}/customer_add", "name": ""}, False),
+        ({"type": f"{DOMAIN}/customer_delete", "name": "Alexandru"}, True),
+    ):
+        await client.send_json_auto_id(payload)
+        assert (await client.receive_json())["success"] is ok, payload

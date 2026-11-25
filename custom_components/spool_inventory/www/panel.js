@@ -85,13 +85,13 @@ input[type=color] { padding:2px; width:44px; height:38px; cursor:pointer; }
 .stat .gear { position:absolute; top:4px; right:4px; }
 button.bare.on { color:var(--primary-color); }
 .famrow { cursor:pointer; } .famrow:hover { background:var(--secondary-background-color, rgba(128,128,128,.08)); } .famlist { padding:0 0 4px 22px; }
-.fitrow { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--divider-color, rgba(128,128,128,.3)); }
+.fitrow { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--divider-color, rgba(128,128,128,.3)); }
 .chip.info { background:var(--primary-color); color:var(--text-primary-color, #fff); }
 .filterbar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:12px; }
 .loc { margin-bottom:16px; } .loc h2 { font-size:16px; font-weight:500; margin:0 0 8px; display:flex; gap:10px; align-items:baseline; flex-wrap:wrap; }
 .loc h2 small { color:var(--secondary-text-color); font-weight:400; font-size:13px; }
 .loc select { padding:4px 8px; max-width:170px; }
-.loc table { table-layout:fixed; } .loc td:nth-child(1) { width:50%; } .loc td:nth-child(2) { width:28%; }
+.loc table { table-layout:fixed; } .loc td:nth-child(1) { width:34%; } .loc td:nth-child(2) { width:20%; } .loc td:nth-child(3) { width:18%; }
 @media (max-width:600px) { .loc table { table-layout:auto; } }
 textarea { width:100%; min-height:90px; resize:vertical; }
 .catlist { max-height:170px; overflow:auto; border:1px solid var(--divider-color); border-radius:8px; }
@@ -995,7 +995,9 @@ class SpoolInventoryPanel extends HTMLElement {
         rows.push(h("tr", { "data-family-list": g.family }, h("td", { colspan: "4" }, h("div", { class: "famlist" }, list.map((p) =>
           h("div", { class: "fitrow", "data-family-spool": p.id },
             h("div", { class: "name" }, this._badge(p.vendor), h("span", { class: "swatch", style: { background: p.color_hex } }), h("span", {}, p.name), h("small", {}, ` ${p.material}`)),
-            h("span", { class: `chip ${p.remaining_weight <= 0 ? "err" : p.remaining_weight < this.low ? "warn" : ""}` }, fmtG(p.remaining_weight))))))));
+            h("div", { class: "row2", style: { flexWrap: "wrap", justifyContent: "flex-end" } },
+              h("span", { class: `chip ${p.remaining_weight <= 0 ? "err" : p.remaining_weight < this.low ? "warn" : ""}` }, fmtG(p.remaining_weight)),
+              this._buttons(p))))))));
       }
     }
     return h("div", {},
@@ -1031,7 +1033,8 @@ class SpoolInventoryPanel extends HTMLElement {
           h("td", {}, this.admin ? h("select", { "aria-label": `Move ${p.name} to another location`, "data-move": p.id, onChange: async (e) => {
             const to = e.target.value === NO_LOCATION ? "" : e.target.value;
             try { await this._call({ type: "update", spool_id: p.id, location: to }); this._toast(`Moved to ${e.target.value}`); } catch {} } },
-          h("option", { value: "", disabled: true, selected: true }, "Move to…"), options.filter((o) => o !== name).map((o) => h("option", { value: o }, o))) : null))))))
+          h("option", { value: "", disabled: true, selected: true }, "Move to…"), options.filter((o) => o !== name).map((o) => h("option", { value: o }, o))) : null),
+          h("td", {}, this._buttons(p)))))))
           : h("div", { class: "panel none" }, "Nothing stored here."));
     }));
   }
@@ -1107,7 +1110,12 @@ class SpoolInventoryPanel extends HTMLElement {
     this._drawResult(result);
 
     const form = h("div", { class: "panel", style: { padding: "12px 16px", display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: "12px", alignContent: "start" } },
-      h("div", { class: "two" }, text("customer", "Customer", "optional"), text("description", "What is it?", "e.g. Moss pole")),
+      h("div", { class: "two" },
+        this.field("Customer", h("div", { class: "row2" },
+          h("input", { type: "text", maxlength: "80", value: q.customer, placeholder: "pick or type a name", list: "customer-list", autocomplete: "off", "data-q": "customer", onInput: (e) => { q.customer = e.target.value; } }),
+          h("datalist", { id: "customer-list" }, (P.customers || []).map((c) => h("option", { value: c }))),
+          adm ? h("button", { "data-customers": "", title: "Edit the customer list", onClick: () => this.customersDialog() }, "List…") : null)),
+        text("description", "What is it?", "e.g. Moss pole")),
       this.field("Machine", h("div", { class: "row2", style: { flexWrap: "wrap" } }, machine, adm ? h("button", { "data-machines": "", onClick: () => this.machinesDialog() }, "Machines…") : null)),
       filRows,
       q.filaments.length < 4 ? h("div", {}, h("button", { "data-add-fil": "", onClick: () => { q.filaments.push({ spool_id: "", name: "", grams: "", price_per_kg: "" }); this._main(); } }, icon("plus"), "Add filament")) : null,
@@ -1200,6 +1208,39 @@ class SpoolInventoryPanel extends HTMLElement {
     this._modal("Delete this quote?", [h("p", {}, `${x.customer || x.description || "This quote"} will be removed. This cannot be undone.`)], [
       { label: "Cancel", run: (c) => c() },
       { label: "Delete", primary: true, run: async (c) => { try { await this._call({ type: "quote_delete", quote_id: x.id }); if (this.s.quote && this.s.quote.quote_id === x.id) this.s.quote.quote_id = null; c(); this._toast("Quote deleted"); } catch {} } }]);
+  }
+
+  customersDialog() {
+    const box = h("div", { class: "hist" });
+    const name = h("input", { type: "text", maxlength: "80", placeholder: "New customer", "data-customer-new": "", onKeydown: (e) => { if (e.key === "Enter") { e.preventDefault(); add(); } } });
+    const add = async () => {
+      const v = name.value.trim(); if (!v) return;
+      try { await this._call({ type: "customer_add", name: v }); name.value = ""; name.focus(); } catch {}
+    };
+    const draw = () => {
+      const list = this.s.pricing.customers || [];
+      const count = (c) => this.s.pricing.quotes.filter((x) => x.customer.toLowerCase() === c.toLowerCase()).length;
+      box.replaceChildren(...(list.length ? list.map((c) => h("div", { class: "hrow", "data-customer": c },
+        h("div", {}, h("b", {}, c), h("small", { class: "wd" }, `${count(c)} ${count(c) === 1 ? "quote" : "quotes"}`)),
+        h("div", { class: "actions" },
+          h("button", { class: "bare", title: "Rename", "aria-label": `Rename ${c}`, "data-rename-customer": c, onClick: () => this.customerRenameDialog(c) }, icon("pencil")),
+          h("button", { class: "bare danger", title: "Remove from the list", "aria-label": `Remove ${c}`, "data-delete-customer": c, onClick: async () => { try { await this._call({ type: "customer_delete", name: c }); } catch {} } }, icon("delete-outline")))))
+        : [h("div", { class: "none" }, "No customers yet. Add one below, or just type a name in a quote: it is added when you save.")]));
+    };
+    draw();
+    this._onData = draw;
+    this._modal("Customers", [box, h("div", { class: "row2" }, name, h("button", { class: "primary", "data-add-customer": "", onClick: add }, icon("plus"), "Add")),
+      h("p", { class: "hint" }, "Removing a name only takes it off this list. Saved quotes keep the name they were made with. Renaming also changes it on that customer's saved quotes.")],
+      [{ label: "Close", primary: true, run: (c) => { this._onData = null; c(); this._main(); } }]);
+  }
+
+  customerRenameDialog(old) {
+    const name = h("input", { type: "text", maxlength: "80", value: old, "data-customer-name": "" });
+    this._modal("Rename customer", [this.field("Name", name)], [
+      { label: "Cancel", run: (c) => c() },
+      { label: "Save", primary: true, run: async (c) => {
+        const v = name.value.trim(); if (!v) return;
+        try { await this._call({ type: "customer_rename", name: old, new_name: v }); if (this.s.quote && this.s.quote.customer.toLowerCase() === old.toLowerCase()) this.s.quote.customer = v; c(); } catch {} } }]);
   }
 
   ratesDialog() {
