@@ -4,6 +4,17 @@ All notable changes to Spool Inventory, newest first. The version number is the 
 Updating never needs anything beyond copying the folder over and restarting Home Assistant
 (plus Ctrl+F5 in the browser for panel changes).
 
+## 1.1.1 - Customer list and buttons in every view
+
+- **Customer list** for quotes: the customer box offers the names you saved (type to filter) and still accepts any new
+  name. *List…* next to it lets you add, rename and remove names. A name typed in a saved quote is added to the list
+  by itself. Renaming also changes it on that customer's saved quotes; removing a name only takes it off the list.
+- **Row buttons everywhere**: the buttons of a spool (loaded in printer, reorder, bought another, weigh, use filament and
+  the ⋯ menu with edit, history, duplicate, archive, delete) now also show in the *By location* view and in the spools
+  listed under a color in *By color*, not only in the main list.
+- The cost box in the Price tab no longer flashes empty when the page redraws.
+- New screenshots in the README.
+
 ## 1.1.0 - Price calculator
 
 - New **Price** tab: what a print costs and what to ask for it. Filament cost comes from the spools you already have
@@ -15,9 +26,6 @@ Updating never needs anything beyond copying the folder over and restarting Home
 - **New layout**: *Filament*, *Printer* and *Price* are now three buttons in the blue bar at the top. Under *Filament* you
   still have Spools, By color, By location, Archive and History with the same filters. The summary cards only show
   under *Filament*, and *Add spool* only appears there too.
-- **Row buttons everywhere**: the buttons of a spool (loaded in printer, reorder, bought another, weigh, use filament and
-  the ⋯ menu with edit, history, duplicate, archive, delete) now also show in the *By location* view and in the spools
-  listed under a color in *By color*, not only in the main list.
 - Rates and machines are yours to set; they start empty (zero), so no one's prices are built in.
 - Included in backups, and restored or merged like the rest of the data. Nothing about the stored spools changes.
 
