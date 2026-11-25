@@ -10,9 +10,6 @@ Updating never needs anything beyond copying the folder over and restarting Home
   (price and weight of the spool), plus electricity, machine wear, preparation and post-processing time, extras and a
   failure allowance. It shows a suggested price (a markup that gets smaller above a limit you choose) and a fixed-markup
   price, and your profit once you type the price you ask.
-- **Customer list**: the customer box in a quote offers the names you saved (type to filter) and still accepts any new name.
-  *List…* next to it lets you add, rename and remove names. A name typed in a saved quote is added to the list by itself.
-  Renaming also changes it on that customer's saved quotes; removing a name only takes it off the list.
 - Up to four filaments per quote, up to 10 machines, up to 500 saved quotes (with customer, description and status
   draft / sent / paid). Open a saved quote to change it.
 - **New layout**: *Filament*, *Printer* and *Price* are now three buttons in the blue bar at the top. Under *Filament* you
